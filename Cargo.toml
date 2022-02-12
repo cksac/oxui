@@ -1,0 +1,8 @@
+[package]
+name = "oxui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+skia-safe = "0.47.0"
+typemap = "0.3.3"
