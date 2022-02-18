@@ -42,7 +42,7 @@ pub struct RenderFlex {
     // render object
     pub(crate) size: Option<Size>,
     // render flex
-    pub(crate) children: Vec<FlexChild>,
+    pub(crate) children: Vec<Flexible>,
     pub(crate) direction: Axis,
     pub(crate) main_axis_size: MainAxisSize,
     pub(crate) main_axis_alignment: MainAxisAlignment,
@@ -73,7 +73,7 @@ impl Default for RenderFlex {
 }
 
 impl RenderFlex {
-    pub fn with_child(mut self, child: impl Into<FlexChild>) -> Self {
+    pub fn with_child(mut self, child: impl Into<Flexible>) -> Self {
         self.children.push(child.into());
         self
     }
@@ -89,19 +89,19 @@ impl RenderFlex {
     }
 }
 
-pub struct FlexChild {
+pub struct Flexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
     pub(crate) inner: BoxedRenderObject,
 }
 
-impl FlexChild {
+impl Flexible {
     pub fn new<T>(child: T, flex: usize, fit: FlexFit) -> Self
     where
         T: Into<BoxedRenderObject>,
     {
-        FlexChild {
+        Flexible {
             offset: Offset::zero(),
             flex,
             fit,
@@ -110,14 +110,14 @@ impl FlexChild {
     }
 }
 
-impl<T> From<T> for FlexChild
+impl<T> From<T> for Flexible
 where
     T: Into<BoxedRenderObject>,
 {
     fn from(child: T) -> Self {
-        FlexChild {
+        Flexible {
             offset: Offset::zero(),
-            flex: 0,
+            flex: 1,
             fit: FlexFit::Loose,
             inner: child.into(),
         }

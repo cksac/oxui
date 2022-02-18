@@ -1,7 +1,5 @@
 use crate::{
-    rendering::{
-        BoxConstraints, Layout, RenderFlex, RenderImage, RenderObject, Size,
-    },
+    rendering::{BoxConstraints, Layout, RenderFlex, RenderImage, RenderObject, Size},
     ui::TextDirection,
 };
 
