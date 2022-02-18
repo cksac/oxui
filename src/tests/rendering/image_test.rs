@@ -1,6 +1,4 @@
-use crate::rendering::{
-    BoxConstraints, BoxedRenderObject, Height, Layout, RenderImage, RenderObject, Size, Width,
-};
+use crate::rendering::{BoxConstraints, Height, Layout, RenderImage, RenderObject, Size, Width};
 use crate::tests::common::create_image;
 
 #[test]
@@ -123,7 +121,7 @@ fn test_none_image() {
 
 #[test]
 fn test_render_object() {
-    let mut render_object = BoxedRenderObject::from(RenderImage::from((100.0, 100.0)));
+    let render_object: &mut dyn RenderObject = &mut RenderImage::from((100.0, 100.0));
 
     render_object.layout(&BoxConstraints {
         min_width: 25.0,
@@ -132,4 +130,15 @@ fn test_render_object() {
         max_height: 75.0,
     });
     assert_eq!(render_object.size(), Some(Size::new(75.0, 75.0)));
+
+    let mut boxed_render_object: Box<dyn RenderObject> =
+        Box::new(RenderImage::from((100.0, 100.0)));
+
+    boxed_render_object.layout(&BoxConstraints {
+        min_width: 25.0,
+        min_height: 25.0,
+        max_width: 75.0,
+        max_height: 75.0,
+    });
+    assert_eq!(boxed_render_object.size(), Some(Size::new(75.0, 75.0)));
 }

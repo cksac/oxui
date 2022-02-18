@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 skia-safe = "0.47.0"
-typemap = "0.3.3"
+lazy_static = "1.4"

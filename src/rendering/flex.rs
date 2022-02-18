@@ -1,9 +1,8 @@
+use std::any::TypeId;
+
 use crate::{
     painting::{Axis, VerticalDirection},
-    rendering::{
-        BoxConstraints, BoxedRenderObject, BoxedRenderObjectBuilder, Layout, Offset, RenderObject,
-        Size,
-    },
+    rendering::{BoxConstraints, Layout, Offset, RenderObject, Size},
     ui::{Clip, TextBaseline, TextDirection},
 };
 
@@ -94,33 +93,33 @@ pub struct Flexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
-    pub(crate) inner: BoxedRenderObject,
+    pub(crate) inner: Box<dyn RenderObject>,
 }
 
 impl Flexible {
     pub fn new<T>(child: T, flex: usize, fit: FlexFit) -> Self
     where
-        T: Into<BoxedRenderObject>,
+        T: RenderObject + 'static,
     {
         Flexible {
             offset: Offset::zero(),
             flex,
             fit,
-            inner: child.into(),
+            inner: Box::new(child),
         }
     }
 }
 
 impl<T> From<T> for Flexible
 where
-    T: Into<BoxedRenderObject>,
+    T: RenderObject + 'static,
 {
     fn from(child: T) -> Self {
         Flexible {
             offset: Offset::zero(),
             flex: 1,
             fit: FlexFit::Loose,
-            inner: child.into(),
+            inner: Box::new(child),
         }
     }
 }
@@ -403,16 +402,12 @@ impl Layout<BoxConstraints> for RenderFlex {
 }
 
 impl RenderObject for RenderFlex {
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+
     fn size(&self) -> Option<Size> {
         self.size
-    }
-}
-
-impl From<RenderFlex> for BoxedRenderObject {
-    fn from(obj: RenderFlex) -> Self {
-        BoxedRenderObjectBuilder::new(obj)
-            .register_layout_for::<BoxConstraints>()
-            .build()
     }
 }
 

@@ -1,8 +1,6 @@
-use crate::rendering::{
-    BoxConstraints, BoxedRenderObject, BoxedRenderObjectBuilder, Height, Layout, RenderObject,
-    Size, Width,
-};
+use crate::rendering::{BoxConstraints, Height, Layout, RenderObject, Size, Width};
 use crate::ui::Image;
+use std::any::TypeId;
 use std::borrow::Borrow;
 
 #[derive(Debug, Default)]
@@ -77,15 +75,11 @@ impl Layout<BoxConstraints> for RenderImage {
 }
 
 impl RenderObject for RenderImage {
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+
     fn size(&self) -> Option<Size> {
         self.size
-    }
-}
-
-impl From<RenderImage> for BoxedRenderObject {
-    fn from(img: RenderImage) -> Self {
-        BoxedRenderObjectBuilder::new(img)
-            .register_layout_for::<BoxConstraints>()
-            .build()
     }
 }

@@ -1,8 +1,8 @@
-use crate::rendering::{
-    BoxConstraints, BoxedRenderObject, BoxedRenderObjectBuilder, Layout, RenderBox, RenderObject,
-    Size,
-};
+use std::any::TypeId;
 
+use crate::rendering::{BoxConstraints, Layout, RenderBox, RenderObject, Size};
+
+#[derive(Default)]
 pub struct RenderConstrainedBox {
     // RenderObject
     pub(crate) size: Option<Size>,
@@ -41,15 +41,11 @@ impl Layout<BoxConstraints> for RenderConstrainedBox {
 }
 
 impl RenderObject for RenderConstrainedBox {
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+
     fn size(&self) -> Option<Size> {
         self.size
-    }
-}
-
-impl From<RenderConstrainedBox> for BoxedRenderObject {
-    fn from(obj: RenderConstrainedBox) -> Self {
-        BoxedRenderObjectBuilder::new(obj)
-            .register_layout_for::<BoxConstraints>()
-            .build()
     }
 }

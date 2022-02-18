@@ -1,5 +1,5 @@
 use crate::rendering::{Layout, RenderObject, Size};
-use std::{borrow::Borrow, ptr::DynMetadata};
+use std::borrow::Borrow;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct BoxConstraints {
@@ -153,10 +153,6 @@ impl BoxConstraints {
             }
         }
     }
-}
-
-impl typemap::Key for BoxConstraints {
-    type Value = DynMetadata<dyn Layout<BoxConstraints>>;
 }
 
 pub trait RenderBox: Layout<BoxConstraints> + RenderObject {}
