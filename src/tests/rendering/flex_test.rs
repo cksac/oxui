@@ -1,15 +1,15 @@
 use crate::{
-    rendering::{BoxConstraints, Layout, RenderFlex, RenderImage, RenderObject, Size},
+    rendering::{BoxConstraints, Layout, RenderConstrainedBox, RenderFlex, RenderObject, Size},
     ui::TextDirection,
 };
 
 #[test]
 fn test_over_constrained() {
-    let image = RenderImage::default();
+    let b = RenderConstrainedBox::new(BoxConstraints::tight((10.0, 10.0)));
 
     let mut flex = RenderFlex::default()
         .with_text_direction(TextDirection::LTR)
-        .with_child(image);
+        .with_child(b);
 
     flex.layout(&BoxConstraints {
         min_width: 200.0,

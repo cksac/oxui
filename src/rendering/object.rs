@@ -66,7 +66,11 @@ where
     C: Sized,
 {
     fn layout(&mut self, constraints: &C) {
-        self.perform_layout(constraints)
+        self.layout_parent_use_size(constraints, false);
+    }
+
+    fn layout_parent_use_size(&mut self, constraints: &C, parent_use_size: bool) {
+        self.perform_layout(constraints);
     }
 
     fn perform_layout(&mut self, constraints: &C);

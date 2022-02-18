@@ -7,9 +7,10 @@ use std::borrow::Borrow;
 
 #[derive(Debug, Default)]
 pub struct RenderImage {
-    // render object
+    // RenderObject
     pub(crate) size: Option<Size>,
-    // render image
+
+    // RenderImage
     pub(crate) image: Option<Image>,
     pub(crate) width: Option<f32>,
     pub(crate) height: Option<f32>,

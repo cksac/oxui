@@ -39,9 +39,10 @@ pub enum MainAxisSize {
 }
 
 pub struct RenderFlex {
-    // render object
+    // RenderObject
     pub(crate) size: Option<Size>,
-    // render flex
+
+    // RenderFlex
     pub(crate) children: Vec<Flexible>,
     pub(crate) direction: Axis,
     pub(crate) main_axis_size: MainAxisSize,
@@ -51,7 +52,7 @@ pub struct RenderFlex {
     pub(crate) text_direction: Option<TextDirection>,
     pub(crate) text_baseline: Option<TextBaseline>,
     pub(crate) clip_behavior: Clip,
-    _overflow: f32,
+    pub(crate) _overflow: f32,
 }
 
 impl Default for RenderFlex {
