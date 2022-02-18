@@ -1,10 +1,12 @@
 use std::{
     any::{type_name, Any},
     borrow::Borrow,
-    ptr::{DynMetadata, NonNull},
+    ptr::{from_raw_parts_mut, DynMetadata, NonNull},
 };
 
 use typemap::{Key, TypeMap};
+
+use crate::rendering::RenderBox;
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Offset {
@@ -83,10 +85,8 @@ pub trait RenderObject {
 }
 
 pub struct BoxedRenderObject {
-    data: NonNull<()>, // Box<T>
-    vtable: DynMetadata<dyn RenderObject>,
+    inner: Box<dyn RenderObject>,
     layout_vtables: TypeMap,
-    drop: unsafe fn(*mut ()),
 }
 
 impl BoxedRenderObject {
@@ -96,10 +96,15 @@ impl BoxedRenderObject {
     {
         if let Some(layout_vt) = self.layout_vtables.get_mut::<C>() {
             let vt_any: &mut dyn Any = layout_vt;
+
+            let (data, _) =
+                (&mut *self.inner as &mut dyn RenderObject as *mut dyn RenderObject).to_raw_parts();
+
             match vt_any.downcast_ref::<DynMetadata<dyn Layout<C>>>() {
                 Some(vtable) => {
                     let layouter: &mut dyn Layout<C> =
-                        unsafe { &mut *std::ptr::from_raw_parts_mut(self.data.as_mut(), *vtable) };
+                        unsafe { &mut *from_raw_parts_mut(data, *vtable) };
+
                     layouter.perform_layout(constraints.borrow());
                 }
                 None => {
@@ -116,28 +121,12 @@ impl BoxedRenderObject {
 
 impl RenderObject for BoxedRenderObject {
     fn size(&self) -> Option<Size> {
-        let obj: &dyn RenderObject =
-            unsafe { &*std::ptr::from_raw_parts(self.data.as_ptr().cast(), self.vtable) };
-        obj.size()
+        self.inner.size()
     }
-}
-
-impl Drop for BoxedRenderObject {
-    fn drop(&mut self) {
-        unsafe { (self.drop)(self.data.as_ptr()) }
-    }
-}
-
-unsafe fn v_drop<T>(this: *mut ())
-where
-    T: 'static,
-{
-    drop(Box::from_raw(this.cast::<T>()))
 }
 
 pub struct BoxedRenderObjectBuilder<T> {
     data: Box<T>,
-    vtable: DynMetadata<dyn RenderObject>,
     layout_vtables: TypeMap,
 }
 
@@ -146,10 +135,8 @@ where
     T: RenderObject + 'static,
 {
     pub fn new(obj: T) -> Self {
-        let (_, vtable) = (&obj as &dyn RenderObject as *const dyn RenderObject).to_raw_parts();
         BoxedRenderObjectBuilder {
             data: Box::new(obj),
-            vtable,
             layout_vtables: TypeMap::new(),
         }
     }
@@ -167,13 +154,9 @@ where
     }
 
     pub fn build(self) -> BoxedRenderObject {
-        unsafe {
-            BoxedRenderObject {
-                data: NonNull::new_unchecked(Box::into_raw(self.data)).cast(),
-                vtable: self.vtable,
-                layout_vtables: self.layout_vtables,
-                drop: v_drop::<T>,
-            }
+        BoxedRenderObject {
+            inner: self.data,
+            layout_vtables: self.layout_vtables,
         }
     }
 }
