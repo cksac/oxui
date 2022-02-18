@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 
 use crate::{
     painting::{Axis, VerticalDirection},
@@ -402,8 +402,12 @@ impl Layout<BoxConstraints> for RenderFlex {
 }
 
 impl RenderObject for RenderFlex {
-    fn type_id(&self) -> TypeId {
+    fn ty_id(&self) -> TypeId {
         TypeId::of::<Self>()
+    }
+
+    fn ty_name(&self) -> &'static str {
+        type_name::<Self>()
     }
 
     fn size(&self) -> Option<Size> {

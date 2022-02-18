@@ -1,5 +1,4 @@
 #![feature(ptr_metadata)]
-#![feature(core_intrinsics)]
 
 #[macro_use]
 extern crate lazy_static;

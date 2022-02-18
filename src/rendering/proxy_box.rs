@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 
 use crate::rendering::{BoxConstraints, Layout, RenderBox, RenderObject, Size};
 
@@ -41,8 +41,12 @@ impl Layout<BoxConstraints> for RenderConstrainedBox {
 }
 
 impl RenderObject for RenderConstrainedBox {
-    fn type_id(&self) -> TypeId {
+    fn ty_id(&self) -> TypeId {
         TypeId::of::<Self>()
+    }
+
+    fn ty_name(&self) -> &'static str {
+        type_name::<Self>()
     }
 
     fn size(&self) -> Option<Size> {

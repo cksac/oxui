@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 skia-safe = "0.47.0"
 lazy_static = "1.4"
+ctor = "0.1.21"

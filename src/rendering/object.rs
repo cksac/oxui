@@ -1,11 +1,38 @@
+use crate::rendering::{BoxConstraints, RenderConstrainedBox, RenderFlex, RenderImage};
+use ctor::ctor;
 use std::{
     any::{type_name, Any, TypeId},
-    borrow::Borrow,
     collections::HashMap,
     ptr::{from_raw_parts_mut, DynMetadata},
+    sync::RwLock,
 };
 
-use crate::rendering::{BoxConstraints, RenderConstrainedBox, RenderImage};
+lazy_static! {
+    static ref LAYOUT_VTABLES: RwLock<HashMap<(TypeId, TypeId), Box<dyn Any + Sync + Send>>> =
+        RwLock::new(HashMap::new());
+}
+
+pub fn register_layout_vt<C, T>()
+where
+    C: 'static,
+    T: Layout<C> + Default + 'static,
+{
+    let mut vtables = LAYOUT_VTABLES.write().expect("writable LAYOUT_VTABLES");
+    let layouter: &mut dyn Layout<C> = &mut T::default();
+    let (_, vt) = (&mut *layouter as &mut dyn Layout<C> as *const dyn Layout<C>).to_raw_parts();
+
+    let vt_key = (TypeId::of::<C>(), TypeId::of::<T>());
+    let vt_any: Box<dyn Any + Sync + Send> = Box::new(vt);
+
+    vtables.insert(vt_key, vt_any);
+}
+
+#[ctor]
+fn register_layout_vts() {
+    register_layout_vt::<BoxConstraints, RenderImage>();
+    register_layout_vt::<BoxConstraints, RenderConstrainedBox>();
+    register_layout_vt::<BoxConstraints, RenderFlex>();
+}
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Offset {
@@ -80,61 +107,55 @@ where
 }
 
 pub trait RenderObject {
-    fn type_id(&self) -> TypeId;
+    fn ty_id(&self) -> TypeId;
+
+    fn ty_name(&self) -> &'static str;
+
     fn size(&self) -> Option<Size>;
 }
 
-fn registered_layouter<T, C>(vtables: &mut HashMap<(TypeId, TypeId), Box<dyn Any + Sync + Send>>)
-where
-    T: Layout<C> + Default + 'static,
-    C: 'static,
-{
-    let layouter: &mut dyn Layout<C> = &mut T::default();
-    let (_, layout_vtable) =
-        (&mut *layouter as &mut dyn Layout<C> as *const dyn Layout<C>).to_raw_parts();
-
-    let type_id = (TypeId::of::<T>(), TypeId::of::<C>());
-    let vt_any: Box<dyn Any + Sync + Send> = Box::new(layout_vtable);
-
-    vtables.insert(type_id, vt_any);
-}
-
-lazy_static! {
-    static ref LAYOUT_VTABLES: HashMap<(TypeId, TypeId), Box<dyn Any + Sync + Send>> = {
-        let mut vtables = HashMap::new();
-
-        registered_layouter::<RenderConstrainedBox, BoxConstraints>(&mut vtables);
-        registered_layouter::<RenderImage, BoxConstraints>(&mut vtables);
-
-        vtables
-    };
-}
-
 impl dyn RenderObject {
+    #[track_caller]
     pub fn layout<C>(&mut self, constraints: &C)
     where
         C: Any,
     {
-        let vt_key = (RenderObject::type_id(self), TypeId::of::<C>());
-        if let Some(layout_vt) = LAYOUT_VTABLES.get(&vt_key) {
+        self.layout_parent_use_size(constraints, false)
+    }
+
+    #[track_caller]
+    pub fn layout_parent_use_size<C>(&mut self, constraints: &C, parent_use_size: bool)
+    where
+        C: Any,
+    {
+        let vtables = LAYOUT_VTABLES.read().expect("readable LAYOUT_VTABLES");
+
+        let vt_key = (TypeId::of::<C>(), self.ty_id());
+        if let Some(vt) = vtables.get(&vt_key) {
             let (data, _) =
                 (&mut *self as &mut dyn RenderObject as *mut dyn RenderObject).to_raw_parts();
 
-            match layout_vt.downcast_ref::<DynMetadata<dyn Layout<C>>>() {
+            match vt.downcast_ref::<DynMetadata<dyn Layout<C>>>() {
                 Some(vtable) => {
-                    let layouter: &mut dyn Layout<C> =
+                    let trait_obj: &mut dyn Layout<C> =
                         unsafe { &mut *from_raw_parts_mut(data, *vtable) };
 
-                    layouter.perform_layout(constraints.borrow());
+                    trait_obj.layout_parent_use_size(constraints, parent_use_size);
                 }
                 None => {
-                    // NOTE: BoxedRenderObjectBuilder enforced `C` has correct `DynMetadata`
-                    unreachable!("dyn Layout<{}> found but downcast fail", type_name::<C>());
+                    unreachable!(
+                        "Layout<{}> vtable for {} found, but downcast to trait vtable fail",
+                        type_name::<C>(),
+                        self.ty_name()
+                    );
                 }
             }
         } else {
-            // runtime error if dynamic dispatch failed
-            panic!("Layout<{}> not registered", type_name::<C>());
+            panic!(
+                "Layout<{}> for {} not registered, please call register_layout_vt first",
+                type_name::<C>(),
+                self.ty_name()
+            );
         }
     }
 }
