@@ -173,6 +173,11 @@ impl BoxConstraints {
     }
 }
 
-pub trait RenderBox: Layout<BoxConstraints> + RenderObject {}
+pub trait RenderBox: Layout<BoxConstraints> + RenderObject {
+    fn unwrap_size(&self) -> Size {
+        self.size()
+            .unwrap_or_else(|| panic!("RenderBox {} was not laid out", self.ty_name()))
+    }
+}
 
 impl<T> RenderBox for T where T: Layout<BoxConstraints> + RenderObject {}

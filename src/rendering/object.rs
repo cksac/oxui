@@ -78,6 +78,10 @@ impl Size {
             height: 0.0,
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.width <= 0.0 || self.height <= 0.0
+    }
 }
 
 impl From<(f32, f32)> for Size {
@@ -106,13 +110,18 @@ where
     fn perform_resize(&mut self, _constraints: &C) {}
 }
 
+pub struct PaintContext {}
 
 pub trait RenderObject {
     fn ty_id(&self) -> TypeId;
 
     fn ty_name(&self) -> &'static str;
 
-    fn size(&self) -> Option<Size>;
+    fn size(&self) -> Option<Size> {
+        None
+    }
+
+    fn paint(&self, context: &mut PaintContext, offset: Offset) {}
 }
 
 impl dyn RenderObject {
