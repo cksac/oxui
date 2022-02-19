@@ -66,6 +66,24 @@ impl BoxConstraints {
         }
     }
 
+    pub fn expand(width: impl Into<Option<f32>>, height: impl Into<Option<f32>>) -> Self {
+        let (min_width, max_width) = width
+            .into()
+            .map(|v| (v, v))
+            .unwrap_or((f32::INFINITY, f32::INFINITY));
+        let (min_height, max_height) = height
+            .into()
+            .map(|v| (v, v))
+            .unwrap_or((f32::INFINITY, f32::INFINITY));
+
+        Self {
+            min_width,
+            max_width,
+            min_height,
+            max_height,
+        }
+    }
+
     pub fn enforce(&self, other: impl Borrow<BoxConstraints>) -> Self {
         let other = other.borrow();
         Self {

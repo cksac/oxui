@@ -1,5 +1,9 @@
 use crate::{
-    rendering::{BoxConstraints, Layout, RenderConstrainedBox, RenderFlex, RenderObject, Size},
+    painting::Axis,
+    rendering::{
+        BoxConstraints, FlexFit, Flexible, Layout, RenderConstrainedBox, RenderFlex, RenderObject,
+        Size,
+    },
     ui::TextDirection,
 };
 
@@ -18,4 +22,27 @@ fn test_over_constrained() {
         max_height: 200.0,
     });
     assert_eq!(flex.size(), Some(Size::new(200.0, 200.0)));
+}
+
+#[test]
+fn test_vertical_overflow() {
+    let mut flex = RenderFlex::default()
+        .with_direction(Axis::Vertical)
+        .with_child(RenderConstrainedBox::new(BoxConstraints::tight_for(
+            None, 200.0,
+        )))
+        .with_child(Flexible::new(
+            RenderConstrainedBox::new(BoxConstraints::expand(None, None)),
+            1,
+            FlexFit::Loose,
+        ));
+
+    let viewport = BoxConstraints::default()
+        .with_max_height(100.0)
+        .with_max_width(100.0);
+
+    flex.layout(&viewport);
+
+    assert_eq!(flex.size(), Some(Size::new(100.0, 100.0)));
+    assert_eq!(flex.children[1].inner.size(), Some(Size::new(100.0, 0.0)));
 }

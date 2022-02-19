@@ -73,8 +73,8 @@ impl Default for RenderFlex {
 }
 
 impl RenderFlex {
-    pub fn with_child(mut self, child: impl Into<Flexible>) -> Self {
-        self.children.push(child.into());
+    pub fn with_direction(mut self, direction: Axis) -> Self {
+        self.direction = direction;
         self
     }
 
@@ -85,6 +85,11 @@ impl RenderFlex {
 
     pub fn with_vertical_direction(mut self, vertical_direction: VerticalDirection) -> Self {
         self.vertical_direction = vertical_direction;
+        self
+    }
+
+    pub fn with_child(mut self, child: impl Into<Flexible>) -> Self {
+        self.children.push(child.into());
         self
     }
 }
@@ -117,8 +122,8 @@ where
     fn from(child: T) -> Self {
         Flexible {
             offset: Offset::zero(),
-            flex: 1,
-            fit: FlexFit::Loose,
+            flex: 0,
+            fit: FlexFit::Tight,
             inner: Box::new(child),
         }
     }

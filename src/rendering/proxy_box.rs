@@ -13,10 +13,10 @@ pub struct RenderConstrainedBox {
 }
 
 impl RenderConstrainedBox {
-    pub fn new(additional_constraints: BoxConstraints) -> Self {
+    pub fn new(constraints: BoxConstraints) -> Self {
         RenderConstrainedBox {
             size: None,
-            additional_constraints,
+            additional_constraints: constraints,
             child: None,
         }
     }

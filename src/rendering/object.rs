@@ -106,6 +106,7 @@ where
     fn perform_resize(&mut self, _constraints: &C) {}
 }
 
+
 pub trait RenderObject {
     fn ty_id(&self) -> TypeId;
 
