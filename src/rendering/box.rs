@@ -1,7 +1,6 @@
-use crate::rendering::{Layout, RenderObject, Size};
-use std::borrow::Borrow;
+use crate::rendering::{RenderObject, Size};
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoxConstraints {
     pub min_width: f32,
     pub max_width: f32,
@@ -84,8 +83,7 @@ impl BoxConstraints {
         }
     }
 
-    pub fn enforce(&self, other: impl Borrow<BoxConstraints>) -> Self {
-        let other = other.borrow();
+    pub fn enforce(&self, other: &BoxConstraints) -> Self {
         Self {
             min_width: self.min_width.clamp(other.min_width, other.max_width),
             max_width: self.max_width.clamp(other.min_width, other.max_width),
@@ -173,11 +171,25 @@ impl BoxConstraints {
     }
 }
 
-pub trait RenderBox: Layout<BoxConstraints> + RenderObject {
-    fn unwrap_size(&self) -> Size {
-        self.size()
-            .unwrap_or_else(|| panic!("RenderBox {} was not laid out", self.ty_name()))
-    }
+pub struct IntrinsicSize {
+    pub min_intrinsic_width: f32,
+    pub min_intrinsic_height: f32,
+    pub max_intrinsic_width: f32,
+    pub max_intrinsic_height: f32,
 }
 
-impl<T> RenderBox for T where T: Layout<BoxConstraints> + RenderObject {}
+pub trait RenderBox: RenderObject {
+    fn layout(&mut self, constraints: &BoxConstraints, parent_use_size: bool) {
+        self.perform_layout(constraints)
+    }
+
+    fn perform_layout(&mut self, constraints: &BoxConstraints);
+
+    fn perform_resize(&mut self, constraints: &BoxConstraints);
+
+    fn size(&self) -> Size;
+
+    fn intrinsic_size(&self) -> Option<IntrinsicSize> {
+        None
+    }
+}

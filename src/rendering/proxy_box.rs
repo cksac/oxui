@@ -1,11 +1,10 @@
 use std::any::{type_name, TypeId};
 
-use crate::rendering::{BoxConstraints, Layout, RenderBox, RenderObject, Size};
+use crate::rendering::{BoxConstraints, RenderBox, RenderObject, Size};
 
-#[derive(Default)]
 pub struct RenderConstrainedBox {
     // RenderObject
-    pub(crate) size: Option<Size>,
+    pub(crate) size: Size,
 
     // RenderConstrainedBox
     pub(crate) additional_constraints: BoxConstraints,
@@ -15,28 +14,10 @@ pub struct RenderConstrainedBox {
 impl RenderConstrainedBox {
     pub fn new(constraints: BoxConstraints) -> Self {
         RenderConstrainedBox {
-            size: None,
+            size: Size::zero(),
             additional_constraints: constraints,
             child: None,
         }
-    }
-}
-
-impl Layout<BoxConstraints> for RenderConstrainedBox {
-    fn perform_layout(&mut self, constraints: &BoxConstraints) {
-        match &mut self.child {
-            Some(child) => {
-                child.layout_parent_use_size(constraints, true);
-                self.size = child.size();
-            }
-            None => {
-                self.size = Some(
-                    self.additional_constraints
-                        .enforce(constraints)
-                        .constrain(Size::zero()),
-                )
-            }
-        };
     }
 }
 
@@ -48,8 +29,27 @@ impl RenderObject for RenderConstrainedBox {
     fn ty_name(&self) -> &'static str {
         type_name::<Self>()
     }
+}
 
-    fn size(&self) -> Option<Size> {
+impl RenderBox for RenderConstrainedBox {
+    fn perform_layout(&mut self, constraints: &BoxConstraints) {
+        self.size = match &mut self.child {
+            Some(child) => {
+                child.layout(constraints, true);
+                child.size()
+            }
+            None => self
+                .additional_constraints
+                .enforce(constraints)
+                .constrain(Size::zero()),
+        };
+    }
+
+    fn perform_resize(&mut self, constraints: &BoxConstraints) {
+        todo!()
+    }
+
+    fn size(&self) -> Size {
         self.size
     }
 }

@@ -1,10 +1,6 @@
-use crate::{
-    painting::Axis,
-    rendering::{
-        BoxConstraints, FlexFit, Flexible, Layout, RenderConstrainedBox, RenderFlex, RenderObject,
-        Size,
-    },
-    ui::TextDirection,
+use crate::rendering::{
+    Axis, BoxConstraints, FlexFit, Flexible, RenderBox, RenderConstrainedBox, RenderFlex, Size,
+    TextDirection,
 };
 
 #[test]
@@ -15,13 +11,16 @@ fn test_over_constrained() {
         .with_text_direction(TextDirection::LTR)
         .with_child(b);
 
-    flex.layout(&BoxConstraints {
-        min_width: 200.0,
-        max_width: 200.0,
-        min_height: 200.0,
-        max_height: 200.0,
-    });
-    assert_eq!(flex.size(), Some(Size::new(200.0, 200.0)));
+    flex.layout(
+        &BoxConstraints {
+            min_width: 200.0,
+            max_width: 200.0,
+            min_height: 200.0,
+            max_height: 200.0,
+        },
+        false,
+    );
+    assert_eq!(flex.size(), Size::new(200.0, 200.0));
 }
 
 #[test]
@@ -41,8 +40,8 @@ fn test_vertical_overflow() {
         .with_max_height(100.0)
         .with_max_width(100.0);
 
-    flex.layout(&viewport);
+    flex.layout(&viewport, false);
 
-    assert_eq!(flex.size(), Some(Size::new(100.0, 100.0)));
-    assert_eq!(flex.children[1].inner.size(), Some(Size::new(100.0, 0.0)));
+    assert_eq!(flex.size(), Size::new(100.0, 100.0));
+    assert_eq!(flex.children[1].inner.size(), Size::new(100.0, 0.0));
 }

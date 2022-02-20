@@ -1,9 +1,8 @@
 use std::any::{type_name, TypeId};
 
-use crate::{
-    painting::{Axis, VerticalDirection},
-    rendering::{BoxConstraints, Layout, Offset, RenderObject, Size},
-    ui::{Clip, TextBaseline, TextDirection},
+use crate::rendering::{
+    Axis, BoxConstraints, Clip, Offset, RenderBox, RenderObject, Size, TextBaseline, TextDirection,
+    VerticalDirection,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,8 +37,8 @@ pub enum MainAxisSize {
 }
 
 pub struct RenderFlex {
-    // RenderObject
-    pub(crate) size: Option<Size>,
+    // RenderBox
+    pub(crate) size: Size,
 
     // RenderFlex
     pub(crate) children: Vec<Flexible>,
@@ -52,24 +51,6 @@ pub struct RenderFlex {
     pub(crate) text_baseline: Option<TextBaseline>,
     pub(crate) clip_behavior: Clip,
     pub(crate) _overflow: f32,
-}
-
-impl Default for RenderFlex {
-    fn default() -> Self {
-        Self {
-            size: None,
-            children: Vec::new(),
-            direction: Axis::Horizontal,
-            main_axis_size: MainAxisSize::Max,
-            main_axis_alignment: MainAxisAlignment::Start,
-            cross_axis_alignment: CrossAxisAlignment::Center,
-            vertical_direction: VerticalDirection::Down,
-            text_direction: None,
-            text_baseline: None,
-            clip_behavior: Clip::None,
-            _overflow: 0.0,
-        }
-    }
 }
 
 impl RenderFlex {
@@ -94,17 +75,35 @@ impl RenderFlex {
     }
 }
 
+impl Default for RenderFlex {
+    fn default() -> Self {
+        Self {
+            size: Size::zero(),
+            children: Vec::new(),
+            direction: Axis::Horizontal,
+            main_axis_size: MainAxisSize::Max,
+            main_axis_alignment: MainAxisAlignment::Start,
+            cross_axis_alignment: CrossAxisAlignment::Center,
+            vertical_direction: VerticalDirection::Down,
+            text_direction: None,
+            text_baseline: None,
+            clip_behavior: Clip::None,
+            _overflow: 0.0,
+        }
+    }
+}
+
 pub struct Flexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
-    pub(crate) inner: Box<dyn RenderObject>,
+    pub(crate) inner: Box<dyn RenderBox>,
 }
 
 impl Flexible {
     pub fn new<T>(child: T, flex: usize, fit: FlexFit) -> Self
     where
-        T: RenderObject + 'static,
+        T: RenderBox + 'static,
     {
         Flexible {
             offset: Offset::zero(),
@@ -117,7 +116,7 @@ impl Flexible {
 
 impl<T> From<T> for Flexible
 where
-    T: RenderObject + 'static,
+    T: RenderBox + 'static,
 {
     fn from(child: T) -> Self {
         Flexible {
@@ -133,22 +132,6 @@ struct LayoutSizes {
     main_size: f32,
     cross_size: f32,
     allocated_size: f32,
-}
-
-impl Size {
-    fn main_size(&self, direction: Axis) -> f32 {
-        match direction {
-            Axis::Horizontal => self.width,
-            Axis::Vertical => self.height,
-        }
-    }
-
-    fn cross_size(&self, direction: Axis) -> f32 {
-        match direction {
-            Axis::Horizontal => self.height,
-            Axis::Vertical => self.width,
-        }
-    }
 }
 
 impl RenderFlex {
@@ -184,8 +167,8 @@ impl RenderFlex {
                         }
                     },
                 };
-                child.inner.layout(&inner_constraints);
-                let child_size = child.inner.size().expect("has size after layout");
+                child.inner.layout(&inner_constraints, true);
+                let child_size = child.inner.size();
                 allocated_size += child_size.main_size(self.direction);
                 cross_size = cross_size.max(child_size.cross_size(self.direction));
             }
@@ -247,8 +230,8 @@ impl RenderFlex {
                         },
                     };
 
-                    child.inner.layout(&inner_constraints);
-                    let child_size = child.inner.size().expect("has size after layout");
+                    child.inner.layout(&inner_constraints, true);
+                    let child_size = child.inner.size();
 
                     let child_main_size = child_size.main_size(self.direction);
                     allocated_size += child_main_size;
@@ -272,7 +255,21 @@ impl RenderFlex {
     }
 }
 
-impl Layout<BoxConstraints> for RenderFlex {
+impl RenderObject for RenderFlex {
+    fn ty_id(&self) -> std::any::TypeId {
+        TypeId::of::<Self>()
+    }
+
+    fn ty_name(&self) -> &'static str {
+        type_name::<Self>()
+    }
+}
+
+impl RenderBox for RenderFlex {
+    fn size(&self) -> Size {
+        self.size
+    }
+
     fn perform_layout(&mut self, constraints: &BoxConstraints) {
         let sizes = self.compute_sizes(constraints);
         let allocated_size = sizes.allocated_size;
@@ -298,143 +295,21 @@ impl Layout<BoxConstraints> for RenderFlex {
                 let size = constraints.constrain((actual_size, cross_size));
                 actual_size = size.width;
                 cross_size = size.height;
-                self.size = Some(size);
+                self.size = size;
             }
             Axis::Vertical => {
                 let size = constraints.constrain((cross_size, actual_size));
                 actual_size = size.height;
                 cross_size = size.width;
-                self.size = Some(size);
+                self.size = size;
             }
         }
         let actual_size_delta = actual_size - allocated_size;
         self._overflow = (-actual_size_delta).max(0.0);
         let remaining_space = actual_size.max(0.0);
-
-        let children_count = self.children.len();
-        let (leading_space, between_space) = match self.main_axis_alignment {
-            MainAxisAlignment::Start => (0.0, 0.0),
-            MainAxisAlignment::End => (remaining_space, 0.0),
-            MainAxisAlignment::Center => (remaining_space / 2.0, 0.0),
-            MainAxisAlignment::SpaceBetween => (
-                0.0,
-                if children_count > 1 {
-                    (children_count - 1) as f32
-                } else {
-                    0.0
-                },
-            ),
-            MainAxisAlignment::SpaceAround => {
-                let between_space = if children_count > 1 {
-                    remaining_space / children_count as f32
-                } else {
-                    0.0
-                };
-                let leading_space = between_space / 2.0;
-                (leading_space, between_space)
-            }
-            MainAxisAlignment::SpaceEvenly => {
-                let between_space = if children_count > 1 {
-                    remaining_space / (children_count + 1) as f32
-                } else {
-                    0.0
-                };
-                (between_space, between_space)
-            }
-        };
-
-        let flip_main_axis =
-            start_is_top_left(self.direction, self.text_direction, self.vertical_direction)
-                .unwrap_or(true);
-
-        // Position elements
-        let mut child_main_position = if flip_main_axis {
-            actual_size - leading_space
-        } else {
-            leading_space
-        };
-        for child in self.children.iter_mut() {
-            let child_size = child.inner.size().expect("has size after layout");
-
-            let child_cross_position = match self.cross_axis_alignment {
-                CrossAxisAlignment::Start | CrossAxisAlignment::End => {
-                    if start_is_top_left(
-                        self.direction.flip(),
-                        self.text_direction,
-                        self.vertical_direction,
-                    )
-                    .unwrap_or(false)
-                        == (self.cross_axis_alignment == CrossAxisAlignment::Start)
-                    {
-                        0.0
-                    } else {
-                        cross_size - child_size.cross_size(self.direction)
-                    }
-                }
-                CrossAxisAlignment::Center => cross_size - child_size.cross_size(self.direction),
-                CrossAxisAlignment::Stretch => 0.0,
-                CrossAxisAlignment::Baseline => {
-                    match self.direction {
-                        Axis::Horizontal => {
-                            // TODO: child.getDistanceToBaseline
-                            let distance: Option<f32> = None;
-                            match distance {
-                                Some(d) => max_baseline_distance - d,
-                                None => 0.0,
-                            }
-                        }
-                        Axis::Vertical => 0.0,
-                    }
-                }
-            };
-
-            if flip_main_axis {
-                child_main_position = child_size.main_size(self.direction);
-            }
-
-            child.offset = match self.direction {
-                Axis::Horizontal => Offset::new(child_main_position, child_cross_position),
-                Axis::Vertical => Offset::new(child_cross_position, child_main_position),
-            };
-
-            if flip_main_axis {
-                child_main_position -= between_space;
-            } else {
-                child_main_position += child_size.main_size(self.direction) + between_space;
-            }
-        }
-    }
-}
-
-impl RenderObject for RenderFlex {
-    fn ty_id(&self) -> TypeId {
-        TypeId::of::<Self>()
     }
 
-    fn ty_name(&self) -> &'static str {
-        type_name::<Self>()
-    }
-
-    fn size(&self) -> Option<Size> {
-        self.size
-    }
-}
-
-fn start_is_top_left(
-    direction: Axis,
-    text_direction: impl Into<Option<TextDirection>>,
-    vertical_direction: impl Into<Option<VerticalDirection>>,
-) -> Option<bool> {
-    match direction {
-        Axis::Horizontal => match text_direction.into() {
-            Some(TextDirection::LTR) => Some(true),
-            Some(TextDirection::RTL) => Some(false),
-            None => None,
-        },
-        Axis::Vertical => match vertical_direction.into() {
-            Some(VerticalDirection::Down) => Some(true),
-            Some(VerticalDirection::Up) => Some(false),
-            None => None,
-        },
+    fn perform_resize(&mut self, constraints: &BoxConstraints) {
+        todo!()
     }
 }
