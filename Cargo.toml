@@ -1,9 +1,13 @@
 [package]
+edition = "2021"
 name = "oxui"
 version = "0.1.0"
-edition = "2021"
 
 [dependencies]
 skia-safe = "0.47.0"
-lazy_static = "1.4"
-ctor = "0.1.21"
+winit = "0.26.1"
+skulpin = { version = "0.14", features = ["winit-app", "winit-latest"] }
+log = "0.4"
+
+[dev-dependencies]
+env_logger = "0.6"

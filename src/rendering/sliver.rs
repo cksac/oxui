@@ -61,7 +61,7 @@ impl<'a> From<&'a SliverConstraints> for BoxConstraints {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct SliverGeometry {
     pub scroll_extent: f32,
     pub paint_origin: f32,
@@ -128,5 +128,17 @@ impl RenderSliver for RenderSliverToBoxAdapter {
 
     fn geometry(&self) -> &SliverGeometry {
         todo!()
+    }
+}
+
+impl<T> From<T> for RenderSliverToBoxAdapter
+where
+    T: RenderBox + 'static,
+{
+    fn from(val: T) -> RenderSliverToBoxAdapter {
+        RenderSliverToBoxAdapter {
+            geometry: SliverGeometry::default(),
+            child: Box::new(val),
+        }
     }
 }

@@ -1,6 +1,6 @@
 use std::any::{type_name, TypeId};
 
-use crate::rendering::{BoxConstraints, RenderBox, RenderObject, Size};
+use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 
 pub struct RenderConstrainedBox {
     // RenderObject
@@ -28,6 +28,10 @@ impl RenderObject for RenderConstrainedBox {
 
     fn ty_name(&self) -> &'static str {
         type_name::<Self>()
+    }
+
+    fn paint(&self, context: &mut PaintContext, offset: Offset) {
+        context.draw_rect(offset, self.size);
     }
 }
 

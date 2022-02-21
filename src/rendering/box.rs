@@ -1,4 +1,4 @@
-use crate::rendering::{RenderObject, Size};
+use crate::rendering::{FlexFit, Flexible, RenderObject, RenderSliverToBoxAdapter, Size};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoxConstraints {
@@ -191,5 +191,19 @@ pub trait RenderBox: RenderObject {
 
     fn intrinsic_size(&self) -> Option<IntrinsicSize> {
         None
+    }
+
+    fn into_sliver(self) -> RenderSliverToBoxAdapter
+    where
+        Self: Sized + 'static,
+    {
+        self.into()
+    }
+
+    fn into_flexible(self, flex: usize, fit: FlexFit) -> Flexible
+    where
+        Self: Sized + 'static,
+    {
+        Flexible::new(self, flex, fit)
     }
 }

@@ -9,10 +9,26 @@ pub struct RenderSliverList {
     // RenderBox
     pub(crate) size: Size,
 
-    // RenderViewport
+    // RenderSliverList
     pub(crate) direction: Axis,
     pub(crate) cache_extent: f32,
     pub(crate) children: Vec<Box<dyn RenderSliver>>,
+}
+
+impl RenderSliverList {
+    pub fn new(direction: Axis, cache_extent: f32) -> Self {
+        RenderSliverList {
+            size: Size::zero(),
+            direction,
+            cache_extent,
+            children: Vec::new(),
+        }
+    }
+
+    pub fn with_child(mut self, child: impl RenderSliver + 'static) -> Self {
+        self.children.push(Box::new(child));
+        self
+    }
 }
 
 impl RenderObject for RenderSliverList {
@@ -22,6 +38,10 @@ impl RenderObject for RenderSliverList {
 
     fn ty_name(&self) -> &'static str {
         type_name::<Self>()
+    }
+
+    fn paint(&self, context: &mut super::PaintContext, offset: Offset) {
+        todo!()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::rendering::{BoxConstraints, RenderBox, RenderObject, Size};
+use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 use crate::ui::Image;
 use std::any::{type_name, TypeId};
 use std::borrow::Borrow;
@@ -48,6 +48,20 @@ impl From<Image> for RenderImage {
     }
 }
 
+impl RenderObject for RenderImage {
+    fn ty_id(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+
+    fn ty_name(&self) -> &'static str {
+        type_name::<Self>()
+    }
+
+    fn paint(&self, context: &mut PaintContext, offset: Offset) {
+        context.draw_rect(offset, self.size);
+    }
+}
+
 impl RenderBox for RenderImage {
     fn perform_layout(&mut self, constraints: &BoxConstraints) {
         let constraints = BoxConstraints::tight_for(self.width, self.height).enforce(constraints);
@@ -65,15 +79,5 @@ impl RenderBox for RenderImage {
 
     fn size(&self) -> Size {
         self.size
-    }
-}
-
-impl RenderObject for RenderImage {
-    fn ty_id(&self) -> TypeId {
-        TypeId::of::<Self>()
-    }
-
-    fn ty_name(&self) -> &'static str {
-        type_name::<Self>()
     }
 }

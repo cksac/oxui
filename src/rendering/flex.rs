@@ -1,8 +1,10 @@
 use std::any::{type_name, TypeId};
 
+use skia_safe::svg::canvas;
+
 use crate::rendering::{
-    Axis, BoxConstraints, Clip, Offset, RenderBox, RenderObject, Size, TextBaseline, TextDirection,
-    VerticalDirection,
+    Axis, BoxConstraints, Clip, Offset, PaintContext, RenderBox, RenderObject, Size, TextBaseline,
+    TextDirection, VerticalDirection,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -263,6 +265,13 @@ impl RenderObject for RenderFlex {
     fn ty_name(&self) -> &'static str {
         type_name::<Self>()
     }
+
+    fn paint(&self, context: &mut PaintContext, offset: Offset) {
+        context.draw_rect(offset, self.size);
+        for child in &self.children {
+            child.inner.paint(context, child.offset + offset);
+        }
+    }
 }
 
 impl RenderBox for RenderFlex {
@@ -307,9 +316,119 @@ impl RenderBox for RenderFlex {
         let actual_size_delta = actual_size - allocated_size;
         self._overflow = (-actual_size_delta).max(0.0);
         let remaining_space = actual_size.max(0.0);
-    }
 
+        let children_count = self.children.len();
+        let (leading_space, between_space) = match self.main_axis_alignment {
+            MainAxisAlignment::Start => (0.0, 0.0),
+            MainAxisAlignment::End => (remaining_space, 0.0),
+            MainAxisAlignment::Center => (remaining_space / 2.0, 0.0),
+            MainAxisAlignment::SpaceBetween => (
+                0.0,
+                if children_count > 1 {
+                    (children_count - 1) as f32
+                } else {
+                    0.0
+                },
+            ),
+            MainAxisAlignment::SpaceAround => {
+                let between_space = if children_count > 1 {
+                    remaining_space / children_count as f32
+                } else {
+                    0.0
+                };
+                let leading_space = between_space / 2.0;
+                (leading_space, between_space)
+            }
+            MainAxisAlignment::SpaceEvenly => {
+                let between_space = if children_count > 1 {
+                    remaining_space / (children_count + 1) as f32
+                } else {
+                    0.0
+                };
+                (between_space, between_space)
+            }
+        };
+
+        let flip_main_axis =
+            !start_is_top_left(self.direction, self.text_direction, self.vertical_direction)
+                .unwrap_or(true);
+
+        // Position elements
+        let mut child_main_position = if flip_main_axis {
+            actual_size - leading_space
+        } else {
+            leading_space
+        };
+        for child in self.children.iter_mut() {
+            let child_size = child.inner.size();
+            let child_cross_position = match self.cross_axis_alignment {
+                CrossAxisAlignment::Start | CrossAxisAlignment::End => {
+                    if start_is_top_left(
+                        self.direction.flip(),
+                        self.text_direction,
+                        self.vertical_direction,
+                    )
+                    .unwrap_or(false)
+                        == (self.cross_axis_alignment == CrossAxisAlignment::Start)
+                    {
+                        0.0
+                    } else {
+                        cross_size - child_size.cross_size(self.direction)
+                    }
+                }
+                CrossAxisAlignment::Center => cross_size - child_size.cross_size(self.direction),
+                CrossAxisAlignment::Stretch => 0.0,
+                CrossAxisAlignment::Baseline => {
+                    match self.direction {
+                        Axis::Horizontal => {
+                            // TODO: child.getDistanceToBaseline
+                            let distance: Option<f32> = None;
+                            match distance {
+                                Some(d) => max_baseline_distance - d,
+                                None => 0.0,
+                            }
+                        }
+                        Axis::Vertical => 0.0,
+                    }
+                }
+            };
+
+            if flip_main_axis {
+                child_main_position = child_size.main_size(self.direction);
+            }
+
+            child.offset = match self.direction {
+                Axis::Horizontal => Offset::new(child_main_position, child_cross_position),
+                Axis::Vertical => Offset::new(child_cross_position, child_main_position),
+            };
+
+            if flip_main_axis {
+                child_main_position -= between_space;
+            } else {
+                child_main_position += child_size.main_size(self.direction) + between_space;
+            }
+        }
+    }
     fn perform_resize(&mut self, constraints: &BoxConstraints) {
         todo!()
+    }
+}
+
+fn start_is_top_left(
+    direction: Axis,
+    text_direction: impl Into<Option<TextDirection>>,
+    vertical_direction: impl Into<Option<VerticalDirection>>,
+) -> Option<bool> {
+    match direction {
+        Axis::Horizontal => match text_direction.into() {
+            Some(TextDirection::LTR) => Some(true),
+            Some(TextDirection::RTL) => Some(false),
+            None => None,
+        },
+        Axis::Vertical => match vertical_direction.into() {
+            Some(VerticalDirection::Down) => Some(true),
+            Some(VerticalDirection::Up) => Some(false),
+            None => None,
+        },
     }
 }
