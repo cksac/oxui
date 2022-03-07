@@ -1,13 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
-
 use crate::{
     rendering::{BoxConstraints, RenderConstrainedBox},
     widgets::{Element, Widget},
 };
 
 #[derive(Debug)]
-pub struct ConstrainedBox {    
+pub struct ConstrainedBox {
     pub constraints: BoxConstraints,
 }
 
