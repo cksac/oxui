@@ -20,9 +20,8 @@ impl Default for ConstrainedBox {
 impl Widget for ConstrainedBox {
     #[topo::nested]
     fn build(&self) -> Element {
-        // same call site return same render text object
+        // same call site return same render object
         let obj = moxie::once(|| {
-            println!("create ConstrainedBox");
             Rc::new(RefCell::new(RenderConstrainedBox::new(self.constraints)))
         });
 
