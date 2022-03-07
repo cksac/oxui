@@ -1,3 +1,5 @@
+use std::{rc::Rc, cell::RefCell};
+
 use crate::rendering::{Axis, AxisDirection, BoxConstraints, RenderBox, ScrollDirection};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,15 +91,15 @@ pub trait RenderSliver {
 
 pub struct RenderSliverToBoxAdapter {
     geometry: SliverGeometry,
-    child: Box<dyn RenderBox>,
+    child: Rc<RefCell<dyn RenderBox>>,
 }
 
 impl RenderSliver for RenderSliverToBoxAdapter {
     fn perform_layout(&mut self, constraints: &SliverConstraints) {
         let ref box_constraints = constraints.into();
-        self.child.layout(box_constraints, true);
+        self.child.borrow_mut().layout(box_constraints, true);
 
-        let child_size = self.child.size();
+        let child_size = self.child.borrow().size();
         let child_extent = match constraints.axis() {
             Axis::Horizontal => child_size.width,
             Axis::Vertical => child_size.height,
@@ -128,17 +130,5 @@ impl RenderSliver for RenderSliverToBoxAdapter {
 
     fn geometry(&self) -> &SliverGeometry {
         todo!()
-    }
-}
-
-impl<T> From<T> for RenderSliverToBoxAdapter
-where
-    T: RenderBox + 'static,
-{
-    fn from(val: T) -> RenderSliverToBoxAdapter {
-        RenderSliverToBoxAdapter {
-            geometry: SliverGeometry::default(),
-            child: Box::new(val),
-        }
     }
 }

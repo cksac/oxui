@@ -1,4 +1,4 @@
-use std::any::{type_name, TypeId};
+use std::{any::{type_name, TypeId}, cell::RefCell, rc::Rc};
 
 use crate::rendering::{
     Axis, AxisDirection, BoxConstraints, GrowthDirection, Offset, RenderBox, RenderObject,
@@ -12,7 +12,7 @@ pub struct RenderSliverList {
     // RenderSliverList
     pub(crate) direction: Axis,
     pub(crate) cache_extent: f32,
-    pub(crate) children: Vec<Box<dyn RenderSliver>>,
+    pub(crate) children: Vec<Rc<RefCell<dyn RenderSliver>>>,
 }
 
 impl RenderSliverList {
@@ -25,8 +25,8 @@ impl RenderSliverList {
         }
     }
 
-    pub fn with_child(mut self, child: impl RenderSliver + 'static) -> Self {
-        self.children.push(Box::new(child));
+    pub fn with_child(mut self, child: Rc<RefCell<dyn RenderSliver>>) -> Self {
+        self.children.push(child);
         self
     }
 }
@@ -89,7 +89,7 @@ impl RenderBox for RenderSliverList {
         };
 
         for child in self.children.iter_mut() {
-            child.layout(&sliver_constraints);
+            child.borrow_mut().layout(&sliver_constraints);
         }
     }
 

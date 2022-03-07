@@ -1,4 +1,4 @@
-use std::any::{type_name, TypeId};
+use std::{any::{type_name, TypeId}, cell::RefCell, rc::Rc};
 
 use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 
@@ -8,7 +8,7 @@ pub struct RenderConstrainedBox {
 
     // RenderConstrainedBox
     pub(crate) additional_constraints: BoxConstraints,
-    pub(crate) child: Option<Box<dyn RenderBox>>,
+    pub(crate) child: Option<Rc<RefCell<dyn RenderBox>>>,
 }
 
 impl RenderConstrainedBox {
@@ -39,8 +39,8 @@ impl RenderBox for RenderConstrainedBox {
     fn perform_layout(&mut self, constraints: &BoxConstraints) {
         self.size = match &mut self.child {
             Some(child) => {
-                child.layout(constraints, true);
-                child.size()
+                child.borrow_mut().layout(constraints, true);
+                child.borrow().size()
             }
             None => self
                 .additional_constraints
