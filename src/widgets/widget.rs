@@ -1,7 +1,23 @@
-use crate::rendering::{RenderBox, RenderSliver};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    rendering::{FlexFit, RenderBox, RenderSliver},
+    widgets::Flexible,
+};
 
 pub trait Widget {
     fn build(&self) -> Element;
+
+    fn into_flexible(self, flex: usize, fit: FlexFit) -> Flexible
+    where
+        Self: 'static + Sized,
+    {
+        Flexible {
+            flex,
+            fit,
+            child: Box::new(self),
+        }
+    }
 }
 
 pub trait SliverWidget {
@@ -9,26 +25,39 @@ pub trait SliverWidget {
 }
 
 pub struct Element {
-    pub(crate) inner: Box<dyn RenderBox>,
+    pub(crate) inner: Rc<RefCell<dyn RenderBox>>,
 }
+
+impl Element {
+    pub fn new(obj: Rc<RefCell<dyn RenderBox>>) -> Self {
+        Self { inner: obj }
+    }
+}
+
 impl<T: 'static> From<T> for Element
 where
     T: RenderBox,
 {
     fn from(obj: T) -> Self {
         Element {
-            inner: Box::new(obj),
+            inner: Rc::new(RefCell::new(obj)),
         }
     }
 }
-impl From<Element> for Box<dyn RenderBox> {
+impl From<Element> for Rc<RefCell<dyn RenderBox>> {
     fn from(e: Element) -> Self {
         e.inner
     }
 }
 
 pub struct SliverElement {
-    inner: Box<dyn RenderSliver>,
+    inner: Rc<RefCell<dyn RenderSliver>>,
+}
+
+impl SliverElement {
+    pub fn new(obj: Rc<RefCell<dyn RenderSliver>>) -> Self {
+        Self { inner: obj }
+    }
 }
 
 impl<T: 'static> From<T> for SliverElement
@@ -37,12 +66,12 @@ where
 {
     fn from(obj: T) -> Self {
         SliverElement {
-            inner: Box::new(obj),
+            inner: Rc::new(RefCell::new(obj)),
         }
     }
 }
 
-impl From<SliverElement> for Box<dyn RenderSliver> {
+impl From<SliverElement> for Rc<RefCell<dyn RenderSliver>> {
     fn from(e: SliverElement) -> Self {
         e.inner
     }

@@ -1,5 +1,5 @@
 use oxui::rendering::{
-    Axis, Clip, CrossAxisAlignment, MainAxisAlignment, MainAxisSize, PipelineOwner, Size,
+    Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, PipelineOwner, Size,
 };
 use oxui::rendering::{PaintContext, VerticalDirection};
 use oxui::widgets::{ConstrainedBox, Element, Flex, Widget};
@@ -22,8 +22,8 @@ fn root() -> Element {
         text_baseline: None,
         clip_behavior: Clip::None,
         children: vec![
-            ConstrainedBox::default().into(),
-            ConstrainedBox::default().into(),
+            ConstrainedBox::default().into_flexible(1, FlexFit::Loose),
+            ConstrainedBox::default().into_flexible(2, FlexFit::Loose),
         ],
     };
     flex.build()

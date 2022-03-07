@@ -19,6 +19,7 @@ pub struct Flex {
 }
 
 impl Widget for Flex {
+    #[topo::nested]
     fn build(&self) -> Element {
         let mut flex = RenderFlex::default();
         for child in self.children.iter() {
@@ -35,6 +36,7 @@ pub struct Flexible {
 }
 
 impl Flexible {
+    #[topo::nested]
     fn build(&self) -> RenderFlexible {
         let child = self.child.build().into();
         RenderFlexible::new(child, self.flex, self.fit)

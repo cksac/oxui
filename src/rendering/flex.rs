@@ -1,4 +1,8 @@
-use std::any::{type_name, TypeId};
+use std::{
+    any::{type_name, TypeId},
+    cell::RefCell,
+    rc::Rc,
+};
 
 use skia_safe::svg::canvas;
 
@@ -99,11 +103,11 @@ pub struct RenderFlexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
-    pub(crate) inner: Box<dyn RenderBox>,
+    pub(crate) inner: Rc<RefCell<dyn RenderBox>>,
 }
 
 impl RenderFlexible {
-    pub fn new(child: Box<dyn RenderBox>, flex: usize, fit: FlexFit) -> Self {
+    pub fn new(child: Rc<RefCell<dyn RenderBox>>, flex: usize, fit: FlexFit) -> Self {
         RenderFlexible {
             offset: Offset::zero(),
             flex,
@@ -152,8 +156,8 @@ impl RenderFlex {
                         }
                     },
                 };
-                child.inner.layout(&inner_constraints, true);
-                let child_size = child.inner.size();
+                child.inner.borrow_mut().layout(&inner_constraints, true);
+                let child_size = child.inner.borrow_mut().size();
                 allocated_size += child_size.main_size(self.direction);
                 cross_size = cross_size.max(child_size.cross_size(self.direction));
             }
@@ -215,8 +219,8 @@ impl RenderFlex {
                         },
                     };
 
-                    child.inner.layout(&inner_constraints, true);
-                    let child_size = child.inner.size();
+                    child.inner.borrow_mut().layout(&inner_constraints, true);
+                    let child_size = child.inner.borrow().size();
 
                     let child_main_size = child_size.main_size(self.direction);
                     allocated_size += child_main_size;
@@ -252,7 +256,10 @@ impl RenderObject for RenderFlex {
     fn paint(&self, context: &mut PaintContext, offset: Offset) {
         context.draw_rect(offset, self.size);
         for child in &self.children {
-            child.inner.paint(context, child.offset + offset);
+            child
+                .inner
+                .borrow_mut()
+                .paint(context, child.offset + offset);
         }
     }
 }
@@ -343,7 +350,7 @@ impl RenderBox for RenderFlex {
             leading_space
         };
         for child in self.children.iter_mut() {
-            let child_size = child.inner.size();
+            let child_size = child.inner.borrow().size();
             let child_cross_position = match self.cross_axis_alignment {
                 CrossAxisAlignment::Start | CrossAxisAlignment::End => {
                     if start_is_top_left(

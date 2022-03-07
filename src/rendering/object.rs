@@ -63,10 +63,10 @@ impl PipelineOwner {
 
     pub fn flush_layout(&mut self, tree: &mut Element) {
         let ref constraints = BoxConstraints::tight(self.size);
-        tree.inner.layout(constraints, false)
+        tree.inner.borrow_mut().layout(constraints, false)
     }
 
     pub fn flush_paint(&mut self, tree: &mut Element, context: &mut PaintContext) {
-        tree.inner.paint(context, Offset::zero());
+        tree.inner.borrow_mut().paint(context, Offset::zero());
     }
 }
