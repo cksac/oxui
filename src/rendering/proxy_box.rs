@@ -1,4 +1,8 @@
-use std::{any::{type_name, TypeId}, cell::RefCell, rc::Rc};
+use std::{
+    any::{type_name, TypeId},
+    cell::RefCell,
+    rc::Rc,
+};
 
 use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 

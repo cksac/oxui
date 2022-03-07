@@ -1,12 +1,12 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use crate::{
     rendering::{FlexFit, RenderBox, RenderSliver},
     widgets::Flexible,
 };
 
-pub trait Widget {
-    fn build(&self) -> Element;
+pub trait Widget: Debug {
+    fn create(&self) -> Element;
 
     fn into_flexible(self, flex: usize, fit: FlexFit) -> Flexible
     where
@@ -20,8 +20,8 @@ pub trait Widget {
     }
 }
 
-pub trait SliverWidget {
-    fn build(&self) -> SliverElement;
+pub trait SliverWidget: Debug {
+    fn create(&self) -> SliverElement;
 }
 
 pub struct Element {
@@ -44,6 +44,7 @@ where
         }
     }
 }
+
 impl From<Element> for Rc<RefCell<dyn RenderBox>> {
     fn from(e: Element) -> Self {
         e.inner

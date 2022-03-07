@@ -1,4 +1,8 @@
-use std::{any::{type_name, TypeId}, cell::RefCell, rc::Rc};
+use std::{
+    any::{type_name, TypeId},
+    cell::RefCell,
+    rc::Rc,
+};
 
 use crate::rendering::{
     Axis, AxisDirection, BoxConstraints, GrowthDirection, Offset, RenderBox, RenderObject,
@@ -57,7 +61,7 @@ impl RenderBox for RenderSliverList {
         }
 
         // if first layout
-        let mut sliver_constraints = match self.direction {
+        let sliver_constraints = match self.direction {
             Axis::Horizontal => SliverConstraints {
                 axis_direction: AxisDirection::Left,
                 growth_direction: GrowthDirection::Forward,

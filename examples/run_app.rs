@@ -1,7 +1,5 @@
-use oxui::rendering::{
-    Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, PipelineOwner, Size,
-};
-use oxui::rendering::{PaintContext, VerticalDirection};
+use oxui::rendering::PaintContext;
+use oxui::rendering::{FlexFit, PipelineOwner, Size};
 use oxui::widgets::{ConstrainedBox, Element, Flex, Widget};
 use skulpin::app::AppBuilder;
 use skulpin::app::AppDrawArgs;
@@ -12,21 +10,13 @@ use skulpin::CoordinateSystem;
 use skulpin::LogicalSize;
 
 fn root() -> Element {
-    let flex = Flex {
-        direction: Axis::Horizontal,
-        main_axis_size: MainAxisSize::Max,
-        main_axis_alignment: MainAxisAlignment::Start,
-        cross_axis_alignment: CrossAxisAlignment::Center,
-        vertical_direction: VerticalDirection::Down,
-        text_direction: None,
-        text_baseline: None,
-        clip_behavior: Clip::None,
-        children: vec![
+    Flex::builder()
+        .children(vec![
             ConstrainedBox::default().into_flexible(1, FlexFit::Loose),
             ConstrainedBox::default().into_flexible(2, FlexFit::Loose),
-        ],
-    };
-    flex.build()
+        ])
+        .build()
+        .create()
 }
 
 struct App {
