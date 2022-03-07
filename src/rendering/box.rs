@@ -1,4 +1,4 @@
-use crate::rendering::{FlexFit, Flexible, RenderObject, RenderSliverToBoxAdapter, Size};
+use crate::rendering::{RenderObject, Size};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoxConstraints {
@@ -64,8 +64,11 @@ impl BoxConstraints {
             max_height,
         }
     }
+    pub fn expand() -> Self {
+        BoxConstraints::expand_by(None, None)
+    }
 
-    pub fn expand(width: impl Into<Option<f32>>, height: impl Into<Option<f32>>) -> Self {
+    pub fn expand_by(width: impl Into<Option<f32>>, height: impl Into<Option<f32>>) -> Self {
         let (min_width, max_width) = width
             .into()
             .map(|v| (v, v))
@@ -191,19 +194,5 @@ pub trait RenderBox: RenderObject {
 
     fn intrinsic_size(&self) -> Option<IntrinsicSize> {
         None
-    }
-
-    fn into_sliver(self) -> RenderSliverToBoxAdapter
-    where
-        Self: Sized + 'static,
-    {
-        self.into()
-    }
-
-    fn into_flexible(self, flex: usize, fit: FlexFit) -> Flexible
-    where
-        Self: Sized + 'static,
-    {
-        Flexible::new(self, flex, fit)
     }
 }

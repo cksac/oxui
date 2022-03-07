@@ -1,33 +1,32 @@
 use oxui::rendering::{
-    Axis, BoxConstraints, FlexFit, Flexible, PipelineOwner, RenderBox, RenderConstrainedBox,
-    RenderFlex, RenderImage, Size,
+    Axis, Clip, CrossAxisAlignment, MainAxisAlignment, MainAxisSize, PipelineOwner, Size,
 };
-use oxui::rendering::{PaintContext, TextDirection, VerticalDirection};
+use oxui::rendering::{PaintContext, VerticalDirection};
+use oxui::widgets::{ConstrainedBox, Element, Flex, Widget};
 use skulpin::app::AppBuilder;
 use skulpin::app::AppDrawArgs;
 use skulpin::app::AppError;
 use skulpin::app::AppHandler;
 use skulpin::app::AppUpdateArgs;
-use skulpin::app::VirtualKeyCode;
-use skulpin::skia_safe;
 use skulpin::CoordinateSystem;
 use skulpin::LogicalSize;
 
-fn root() -> impl RenderBox {
-    let flex = RenderFlex::default()
-        .with_text_direction(TextDirection::LTR)
-        .with_vertical_direction(VerticalDirection::Down)
-        .with_direction(Axis::Horizontal)
-        .with_child(
-            RenderConstrainedBox::new(BoxConstraints::expand(None, None))
-                .into_flexible(1, FlexFit::Loose),
-        )
-        .with_child(
-            RenderConstrainedBox::new(BoxConstraints::expand(None, None))
-                .into_flexible(2, FlexFit::Loose),
-        );
-
-    flex
+fn root() -> Element {
+    let flex = Flex {
+        direction: Axis::Horizontal,
+        main_axis_size: MainAxisSize::Max,
+        main_axis_alignment: MainAxisAlignment::Start,
+        cross_axis_alignment: CrossAxisAlignment::Center,
+        vertical_direction: VerticalDirection::Down,
+        text_direction: None,
+        text_baseline: None,
+        clip_behavior: Clip::None,
+        children: vec![
+            ConstrainedBox::default().into(),
+            ConstrainedBox::default().into(),
+        ],
+    };
+    flex.build()
 }
 
 struct App {
@@ -35,7 +34,7 @@ struct App {
 }
 
 impl App {
-    pub fn new(width: u32, height: u32, root: impl RenderBox + 'static) -> Self {
+    pub fn new(width: u32, height: u32, root: fn() -> Element) -> Self {
         App {
             pipeline: PipelineOwner::new(Size::new(width as f32, height as f32), root),
         }
@@ -76,7 +75,7 @@ fn main() {
     // output will be automatically scaled so that it's always visible.
     let logical_size = LogicalSize::new(900, 600);
 
-    let app = App::new(logical_size.width, logical_size.height, root());
+    let app = App::new(logical_size.width, logical_size.height, root);
 
     let visible_range = skulpin::skia_safe::Rect {
         left: 0.0,

@@ -8,6 +8,8 @@ skia-safe = "0.47.0"
 winit = "0.26.1"
 skulpin = { version = "0.14", features = ["winit-app", "winit-latest"] }
 log = "0.4"
+topo = "0.13"
+moxie = "0.7.1"
 
 [dev-dependencies]
 env_logger = "0.6"

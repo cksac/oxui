@@ -1,11 +1,15 @@
 use std::any::TypeId;
 
-use crate::rendering::{BoxConstraints, Offset, RenderBox, Size};
+use moxie::runtime::RunLoop;
+
+use crate::{
+    rendering::{BoxConstraints, Offset, RenderBox, Size},
+    widgets::Element,
+};
 
 pub struct PaintContext<'a> {
     pub canvas: &'a mut skia_safe::Canvas,
 }
-
 
 impl<'a> PaintContext<'a> {
     pub fn new(canvas: &'a mut skia_safe::Canvas) -> Self {
@@ -40,28 +44,29 @@ pub trait RenderObject {
 
 pub struct PipelineOwner {
     size: Size,
-    root: Box<dyn RenderBox>,
+    rt: RunLoop<fn() -> Element>,
 }
 
 impl PipelineOwner {
-    pub fn new(size: Size, root: impl RenderBox + 'static) -> Self {
-        PipelineOwner {
-            size,
-            root: Box::new(root),
-        }
+    pub fn new(size: Size, root: fn() -> Element) -> Self {
+        let rt = RunLoop::new(root);
+        PipelineOwner { size, rt }
     }
 
     pub fn draw_frame(&mut self, context: &mut PaintContext) {
-        self.flush_layout();
-        self.flush_paint(context);
+        // build render tree;
+        let mut tree = self.rt.run_once();
+
+        self.flush_layout(&mut tree);
+        self.flush_paint(&mut tree, context);
     }
 
-    pub fn flush_layout(&mut self) {
+    pub fn flush_layout(&mut self, tree: &mut Element) {
         let ref constraints = BoxConstraints::tight(self.size);
-        self.root.layout(constraints, false)
+        tree.inner.layout(constraints, false)
     }
 
-    pub fn flush_paint(&mut self, context: &mut PaintContext) {
-        self.root.paint(context, Offset::zero());
+    pub fn flush_paint(&mut self, tree: &mut Element, context: &mut PaintContext) {
+        tree.inner.paint(context, Offset::zero());
     }
 }
