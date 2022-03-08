@@ -404,6 +404,29 @@ impl RenderBox for RenderFlex {
     fn perform_resize(&mut self, constraints: &BoxConstraints) {
         todo!()
     }
+
+    // fn hit_test_self(&self, position: Offset) -> bool {
+    //     false
+    // }
+
+    fn hit_test_children(&self, position: Offset) -> bool {
+        let mut is_hit = false;
+        for child in &self.children {
+            let transformed = position - child.offset;
+
+            println!(
+                "{:?}, {:?}, {:?}, {:?}",
+                position,
+                transformed,
+                child.offset,
+                child.inner.borrow().size()
+            );
+            if child.inner.borrow().hit_test(transformed) {
+                is_hit = true;
+            }
+        }
+        is_hit
+    }
 }
 
 fn start_is_top_left(

@@ -33,6 +33,10 @@ impl Size {
             Axis::Vertical => self.width,
         }
     }
+
+    pub fn contains(&self, offset: Offset) -> bool {
+        offset.x >= 0.0 && offset.x < self.width && offset.y >= 0.0 && offset.y < self.height
+    }
 }
 
 impl From<(f32, f32)> for Size {
@@ -66,6 +70,16 @@ impl std::ops::Add<Offset> for Offset {
         Offset {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
+        }
+    }
+}
+
+impl std::ops::Sub<Offset> for Offset {
+    type Output = Self;
+    fn sub(self, rhs: Offset) -> Self::Output {
+        Offset {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
         }
     }
 }

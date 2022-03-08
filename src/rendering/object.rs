@@ -61,7 +61,7 @@ impl PipelineOwner {
         }
     }
 
-    pub fn draw_frame(&mut self, context: &mut PaintContext) {
+    pub fn draw_frame(&mut self, context: &mut PaintContext, position: Offset) {
         // build render tree;
         self.build_context.reset_index();
         let tree = self.root.create(&self.build_context);
@@ -69,7 +69,9 @@ impl PipelineOwner {
         //println!("{:#?}", self.context);
 
         self.flush_layout(tree.clone());
-        self.flush_paint(tree, context);
+        self.flush_paint(tree.clone(), context);
+
+        tree.borrow().hit_test(position);
     }
 
     pub fn flush_layout(&mut self, tree: Rc<RefCell<dyn RenderBox>>) {

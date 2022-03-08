@@ -44,6 +44,9 @@ impl Widget for Flex {
         context.once_with(
             || {
                 let mut flex = RenderFlex::default();
+                // TODO:
+                flex.direction = self.direction;
+
                 for child in self.children.iter() {
                     flex.children.push(child.create(context));
                 }
