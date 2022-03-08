@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    rendering::{BoxConstraints, RenderConstrainedBox},
-    widgets::{Element, Widget},
+    rendering::{BoxConstraints, RenderBox, RenderConstrainedBox},
+    widgets::{BuildContext, Widget},
 };
 
 #[derive(Debug)]
@@ -19,18 +19,12 @@ impl Default for ConstrainedBox {
 }
 
 impl Widget for ConstrainedBox {
-    #[topo::nested]
-    fn create(&self) -> Element {
-        // same call site return same render object
-        let obj =
-            moxie::once(|| Rc::new(RefCell::new(RenderConstrainedBox::new(self.constraints))));
-
-        // apply changes
-        // if self.constraints != obj.borrow().additional_constraints {
-        //     // TODO: mark need layout / need paint
-        // }
-
-        obj.borrow_mut().additional_constraints = self.constraints;
-        Element::new(obj)
+    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        context.once_with(
+            || RenderConstrainedBox::new(self.constraints),
+            |element| {
+                element.additional_constraints = self.constraints;
+            },
+        )
     }
 }

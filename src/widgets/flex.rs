@@ -1,11 +1,13 @@
+use std::{cell::RefCell, rc::Rc};
+
 use typed_builder::TypedBuilder;
 
 use crate::{
     rendering::{
-        Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, RenderFlex,
-        RenderFlexible, TextBaseline, TextDirection, VerticalDirection,
+        Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, RenderBox,
+        RenderFlex, RenderFlexible, TextBaseline, TextDirection, VerticalDirection,
     },
-    widgets::{Element, Widget},
+    widgets::{BuildContext, Widget},
 };
 
 #[derive(Debug, TypedBuilder)]
@@ -38,13 +40,22 @@ pub struct Flex {
 }
 
 impl Widget for Flex {
-    #[topo::nested]
-    fn create(&self) -> Element {
-        let mut flex = RenderFlex::default();
-        for child in self.children.iter() {
-            flex.children.push(child.create());
-        }
-        flex.into()
+    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        context.once_with(
+            || {
+                let mut flex = RenderFlex::default();
+                for child in self.children.iter() {
+                    flex.children.push(child.create(context));
+                }
+                flex
+            },
+            |flex| {
+                flex.children.clear();
+                for child in self.children.iter() {
+                    flex.children.push(child.create(context));
+                }
+            },
+        )
     }
 }
 
@@ -56,9 +67,8 @@ pub struct Flexible {
 }
 
 impl Flexible {
-    #[topo::nested]
-    fn create(&self) -> RenderFlexible {
-        let child = self.child.create().into();
+    fn create(&self, context: &BuildContext) -> RenderFlexible {
+        let child = self.child.create(context).into();
         RenderFlexible::new(child, self.flex, self.fit)
     }
 }

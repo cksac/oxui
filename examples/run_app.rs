@@ -1,42 +1,50 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::rc::Rc;
+use std::time::{Duration, Instant};
 
-use oxui::rendering::PaintContext;
 use oxui::rendering::{FlexFit, PipelineOwner, Size};
-use oxui::widgets::{ConstrainedBox, Element, Flex, Widget};
-use skulpin::app::{AppBuilder, MouseButton};
+use oxui::rendering::{PaintContext, RenderBox};
+use oxui::widgets::{BuildContext, ConstrainedBox, Flex, Widget};
 use skulpin::app::AppDrawArgs;
 use skulpin::app::AppError;
 use skulpin::app::AppHandler;
 use skulpin::app::AppUpdateArgs;
+use skulpin::app::{AppBuilder, MouseButton};
 use skulpin::CoordinateSystem;
 use skulpin::LogicalSize;
 
-#[topo::nested]
-fn root() -> Element {
-    let (count, count_mut) = moxie::state(|| 0usize);
-    let mut children = Vec::new();
-    
-    for i in 1..=*count+1 {
-        children.push(ConstrainedBox::default().into_flexible(i, FlexFit::Loose))
-    }
+#[derive(Debug)]
+pub struct Root;
+impl Widget for Root {
+    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        let state = context.once(|| (2usize..55).chain((3usize..=56).rev()).cycle());
+        let count: usize = state.borrow_mut().next().unwrap();
 
-    if *count < 10 {
-        count_mut.set(*count + 1);
-    }
+        let mut children = Vec::new();
+        for i in 1..=count {
+            children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+        }
 
-    Flex::builder().children(children).build().create()
+        Flex::builder().children(children).build().create(context)
+    }
 }
 
 struct App {
     pipeline: PipelineOwner,
     previous_clicks: VecDeque<bool>,
+    previous_frame: Instant,
 }
 
 impl App {
-    pub fn new(width: u32, height: u32, root: fn() -> Element) -> Self {
+    pub fn new<W>(width: u32, height: u32, root: W) -> Self
+    where
+        W: 'static + Widget,
+    {
         App {
             pipeline: PipelineOwner::new(Size::new(width as f32, height as f32), root),
-            previous_clicks: VecDeque::new()
+            previous_clicks: VecDeque::new(),
+            previous_frame: Instant::now(),
         }
     }
 }
@@ -49,19 +57,24 @@ impl AppHandler for App {
         // if input_state.is_key_down(VirtualKeyCode::Escape) {
         //     app_control.enqueue_terminate_process();
         // }
-        if update_args.input_state.is_mouse_just_down(MouseButton::Left) {
-            self.previous_clicks.push_back(true);
-        }
+        // if update_args
+        //     .input_state
+        //     .is_mouse_just_down(MouseButton::Left)
+        // {
+        //     self.previous_clicks.push_back(true);
+        // }
     }
 
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
-        if let Some(_) = self.previous_clicks.pop_front() {
+        //if let Some(_) = self.previous_clicks.pop_front() {}
+        if self.previous_frame.elapsed() > Duration::from_millis(100) {
             let canvas = draw_args.canvas;
             canvas.clear(0);
-    
+
             let mut context = PaintContext::new(canvas);
             self.pipeline.draw_frame(&mut context);
+            self.previous_frame = draw_args.time_state.current_instant();
         }
     }
 
@@ -83,7 +96,7 @@ fn main() {
     // output will be automatically scaled so that it's always visible.
     let logical_size = LogicalSize::new(900, 600);
 
-    let app = App::new(logical_size.width, logical_size.height, root);
+    let app = App::new(logical_size.width, logical_size.height, Root);
 
     let visible_range = skulpin::skia_safe::Rect {
         left: 0.0,

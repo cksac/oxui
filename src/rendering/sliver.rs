@@ -1,6 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::rendering::{Axis, AxisDirection, BoxConstraints, RenderBox, ScrollDirection};
+use crate::rendering::{
+    Axis, AxisDirection, BoxConstraints, RenderBox, RenderObject, ScrollDirection,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GrowthDirection {
@@ -77,7 +79,7 @@ pub struct SliverGeometry {
     pub hit_test_extent: f32,
 }
 
-pub trait RenderSliver {
+pub trait RenderSliver: RenderObject {
     fn layout(&mut self, constraints: &SliverConstraints) {
         self.perform_layout(constraints)
     }
@@ -89,9 +91,24 @@ pub trait RenderSliver {
     fn geometry(&self) -> &SliverGeometry;
 }
 
+#[derive(Debug)]
 pub struct RenderSliverToBoxAdapter {
     geometry: SliverGeometry,
     child: Rc<RefCell<dyn RenderBox>>,
+}
+
+impl RenderObject for RenderSliverToBoxAdapter {
+    fn ty_id(&self) -> std::any::TypeId {
+        todo!()
+    }
+
+    fn ty_name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn paint(&self, context: &mut super::PaintContext, offset: super::Offset) {
+        todo!()
+    }
 }
 
 impl RenderSliver for RenderSliverToBoxAdapter {

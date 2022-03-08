@@ -42,6 +42,7 @@ pub enum MainAxisSize {
     Max,
 }
 
+#[derive(Debug)]
 pub struct RenderFlex {
     // RenderBox
     pub(crate) size: Size,
@@ -99,6 +100,7 @@ impl Default for RenderFlex {
     }
 }
 
+#[derive(Debug)]
 pub struct RenderFlexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,

@@ -9,6 +9,7 @@ use crate::rendering::{
     RenderSliver, ScrollDirection, Size, SliverConstraints,
 };
 
+#[derive(Debug)]
 pub struct RenderSliverList {
     // RenderBox
     pub(crate) size: Size,

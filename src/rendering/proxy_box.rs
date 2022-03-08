@@ -6,6 +6,7 @@ use std::{
 
 use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 
+#[derive(Debug)]
 pub struct RenderConstrainedBox {
     // RenderObject
     pub(crate) size: Size,
