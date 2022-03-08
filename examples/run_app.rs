@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use oxui::rendering::{FlexFit, PipelineOwner, Size};
+use oxui::rendering::{Axis, FlexFit, Offset, PipelineOwner, Size};
 use oxui::rendering::{PaintContext, RenderBox};
 use oxui::widgets::{BuildContext, ConstrainedBox, Flex, Widget};
 use skulpin::app::AppDrawArgs;
@@ -18,12 +18,28 @@ use skulpin::LogicalSize;
 pub struct Root;
 impl Widget for Root {
     fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        let state = context.once(|| (2usize..55).chain((3usize..=56).rev()).cycle());
+        let state = context.state(|| (1usize..17).chain((2usize..=18).rev()).cycle());
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
-        for i in 1..=count {
-            children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+        for j in 1..=count {
+            children.push({
+                let state =
+                    context.state_slot(j, || (1usize..17).chain((2usize..=18).rev()).cycle());
+                let count: usize = state.borrow_mut().next().unwrap();
+
+                let mut children = Vec::new();
+                for i in 1..=count {
+                    children
+                        .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+                }
+
+                Flex::builder()
+                    .direction(Axis::Vertical)
+                    .children(children)
+                    .build()
+                    .into_flexible(j, FlexFit::Loose)
+            });
         }
 
         Flex::builder().children(children).build().create(context)
@@ -57,17 +73,17 @@ impl AppHandler for App {
         // if input_state.is_key_down(VirtualKeyCode::Escape) {
         //     app_control.enqueue_terminate_process();
         // }
-        // if update_args
-        //     .input_state
-        //     .is_mouse_just_down(MouseButton::Left)
-        // {
-        //     self.previous_clicks.push_back(true);
-        // }
+        if update_args
+            .input_state
+            .is_mouse_just_down(MouseButton::Left)
+        {
+            self.previous_clicks.push_back(true);
+        }
     }
 
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
-        //if let Some(_) = self.previous_clicks.pop_front() {}
+        //if let Some(_) = self.previous_clicks.pop_front() {
         if self.previous_frame.elapsed() > Duration::from_millis(100) {
             let canvas = draw_args.canvas;
             canvas.clear(0);

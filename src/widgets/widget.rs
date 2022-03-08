@@ -3,34 +3,134 @@ use crate::{
     widgets::Flexible,
 };
 use downcast_rs::{impl_downcast, Downcast};
-use std::{cell::RefCell, collections::VecDeque, fmt::Debug, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, VecDeque},
+    fmt::Debug,
+    panic::Location,
+    rc::Rc,
+};
+use std::{hash::Hash, sync::RwLock};
 
 pub trait CachedValue: Downcast + Debug {}
 
 impl_downcast!(CachedValue);
 impl<T: 'static + Debug> CachedValue for T {}
 
+#[derive(Clone, Copy, Debug)]
+pub struct CallSite(&'static Location<'static>);
+impl CallSite {
+    /// The pointer to the location metadata
+    ///
+    /// Unique locations are expected to have unique pointers. This
+    /// is perhaps not formally guaranteed by the language spec, but
+    /// it's hard to imagine how it can be implemented otherwise.
+    fn as_ptr(&self) -> *const Location<'static> {
+        self.0
+    }
+}
+
+impl PartialEq for CallSite {
+    fn eq(&self, other: &CallSite) -> bool {
+        self.as_ptr() == other.as_ptr()
+    }
+}
+
+impl Eq for CallSite {}
+
+impl Hash for CallSite {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.as_ptr().hash(state)
+    }
+}
+
+impl PartialOrd for CallSite {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.as_ptr().partial_cmp(&other.as_ptr())
+    }
+}
+
+impl Ord for CallSite {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.as_ptr().cmp(&other.as_ptr())
+    }
+}
+
+impl From<&'static Location<'static>> for CallSite {
+    fn from(inner: &'static Location<'static>) -> Self {
+        CallSite(inner)
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, Debug)]
+pub struct StateKey {
+    call_site: CallSite,
+    slot: usize,
+}
+impl StateKey {
+    pub fn new(caller: impl Into<CallSite>, slot: usize) -> StateKey {
+        StateKey {
+            call_site: caller.into(),
+            slot,
+        }
+    }
+}
 #[derive(Debug)]
 pub struct BuildContext {
+    // state to store call site stable states
+    state: RwLock<HashMap<StateKey, Rc<dyn CachedValue>>>,
+    // tape to store render object tree
     tape: RefCell<Vec<VecDeque<Rc<dyn CachedValue>>>>,
     end_scope: RefCell<bool>,
-    index: RefCell<usize>,
+    cursor: RefCell<usize>,
 }
 impl BuildContext {
     pub fn new() -> Self {
         BuildContext {
+            state: RwLock::new(HashMap::new()),
             tape: RefCell::new(Vec::from([VecDeque::new()])),
             end_scope: RefCell::new(false),
-            index: RefCell::new(0),
+            cursor: RefCell::new(0),
         }
     }
 
-    pub fn reset_index(&mut self) {
-        *self.index.borrow_mut() = 0;
+    pub fn reset_cursor(&mut self) {
+        *self.cursor.borrow_mut() = 0;
     }
 }
 
 impl BuildContext {
+    #[track_caller]
+    pub fn state<Init, Return>(&self, init_fn: Init) -> Rc<RefCell<Return>>
+    where
+        Init: FnOnce() -> Return,
+        Return: 'static + Debug,
+    {
+        self.state_slot(0, init_fn)
+    }
+
+    #[track_caller]
+    pub fn state_slot<Init, Return>(&self, slot: usize, init_fn: Init) -> Rc<RefCell<Return>>
+    where
+        Init: FnOnce() -> Return,
+        Return: 'static + Debug,
+    {
+        let mut state = self.state.write().expect("get writable state");
+
+        let key = StateKey::new(Location::caller(), slot);
+        if let Some(cache) = state.get(&key).cloned() {
+            if let Ok(val) = cache.downcast_rc::<RefCell<Return>>() {
+                val
+            } else {
+                unreachable!()
+            }
+        } else {
+            let obj = Rc::new(RefCell::new(init_fn()));
+            state.insert(key, obj.clone());
+            obj
+        }
+    }
+
     pub fn once<Init, Return>(&self, init_fn: Init) -> Rc<RefCell<Return>>
     where
         Init: FnOnce() -> Return,
@@ -56,10 +156,10 @@ impl BuildContext {
             .borrow()
             .last()
             .unwrap()
-            .get(*self.index.borrow())
+            .get(*self.cursor.borrow())
             .cloned();
 
-        *self.index.borrow_mut() += 1;
+        *self.cursor.borrow_mut() += 1;
         if cache.is_some() {
             let cache = cache.unwrap();
             if let Ok(val) = cache.downcast_rc::<RefCell<Return>>() {
@@ -75,7 +175,7 @@ impl BuildContext {
                     .borrow_mut()
                     .last_mut()
                     .unwrap()
-                    .drain((*self.index.borrow() - 1)..);
+                    .drain((*self.cursor.borrow() - 1)..);
             }
         }
         self.begin();

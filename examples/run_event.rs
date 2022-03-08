@@ -19,13 +19,20 @@ pub struct Root;
 impl Widget for Root {
     fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
         let mut children = Vec::new();
-        for i in 1..=4 {
+
+        let state = context.once(|| (2usize..6).chain((3usize..=8).rev()).cycle());
+        let count: usize = state.borrow_mut().next().unwrap();
+
+        for i in 1..=count {
             children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
         }
 
         children.push({
+            let state = context.once(|| (2usize..6).chain((3usize..=8).rev()).cycle());
+            let count: usize = state.borrow_mut().next().unwrap();
+
             let mut children = Vec::new();
-            for i in 1..=4 {
+            for i in 1..=count {
                 children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
             }
 
@@ -72,20 +79,21 @@ impl AppHandler for App {
             .is_mouse_just_down(MouseButton::Left)
         {
             let p = update_args.input_state.mouse_position();
-            let offset = Offset::new(p.x as f32, p.y as f32);
-            self.previous_clicks.push_back(offset);
+            let position = Offset::new(p.x as f32, p.y as f32);
+            self.pipeline.handle_event(position);
+            self.previous_clicks.push_back(position);
         }
     }
 
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
-        if let Some(position) = self.previous_clicks.pop_front() {
+        if let Some(_) = self.previous_clicks.pop_front() {
             //if self.previous_frame.elapsed() > Duration::from_millis(100) {
             let canvas = draw_args.canvas;
             canvas.clear(0);
 
             let mut context = PaintContext::new(canvas);
-            self.pipeline.draw_frame(&mut context, position);
+            self.pipeline.draw_frame(&mut context);
             self.previous_frame = draw_args.time_state.current_instant();
         }
     }

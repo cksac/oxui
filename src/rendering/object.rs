@@ -45,6 +45,7 @@ pub struct PipelineOwner {
     size: Size,
     root: Box<dyn Widget>,
     build_context: BuildContext,
+    render_view: Rc<RefCell<dyn RenderBox>>,
 }
 
 impl PipelineOwner {
@@ -54,32 +55,36 @@ impl PipelineOwner {
     {
         let root = Box::new(root);
         let build_context = BuildContext::new();
+        let render_view = root.create(&build_context);
         PipelineOwner {
             size,
             root,
             build_context,
+            render_view,
         }
     }
 
-    pub fn draw_frame(&mut self, context: &mut PaintContext, position: Offset) {
+    pub fn handle_event(&mut self, position: Offset) {
+        self.render_view.borrow().hit_test(position);
+    }
+
+    pub fn draw_frame(&mut self, context: &mut PaintContext) {
         // build render tree;
-        self.build_context.reset_index();
-        let tree = self.root.create(&self.build_context);
+        self.build_context.reset_cursor();
+        self.render_view = self.root.create(&self.build_context);
         //println!("{:#?}", tree);
         //println!("{:#?}", self.context);
 
-        self.flush_layout(tree.clone());
-        self.flush_paint(tree.clone(), context);
-
-        tree.borrow().hit_test(position);
+        self.flush_layout();
+        self.flush_paint(context);
     }
 
-    pub fn flush_layout(&mut self, tree: Rc<RefCell<dyn RenderBox>>) {
+    pub fn flush_layout(&mut self) {
         let ref constraints = BoxConstraints::tight(self.size);
-        tree.borrow_mut().layout(constraints, false)
+        self.render_view.borrow_mut().layout(constraints, false)
     }
 
-    pub fn flush_paint(&mut self, tree: Rc<RefCell<dyn RenderBox>>, context: &mut PaintContext) {
-        tree.borrow_mut().paint(context, Offset::zero());
+    pub fn flush_paint(&mut self, context: &mut PaintContext) {
+        self.render_view.borrow_mut().paint(context, Offset::zero());
     }
 }
