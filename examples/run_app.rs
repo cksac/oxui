@@ -17,15 +17,18 @@ use skulpin::LogicalSize;
 #[derive(Debug)]
 pub struct Root;
 impl Widget for Root {
-    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        let state = context.state(|| (1usize..17).chain((2usize..=18).rev()).cycle());
+    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {        
+        //let state = context.state(|| (1usize..17).chain((2usize..=18).rev()).cycle());
+        let state = context.once(|| (1usize..17).chain((2usize..=18).rev()).cycle());
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
         for j in 1..=count {
             children.push({
-                let state =
-                    context.state_slot(j, || (1usize..17).chain((2usize..=18).rev()).cycle());
+                // NOTE: call site state has same result of execution trace?
+                //let state = context.state_slot( j,|| (1usize..17).chain((2usize..=18).rev()).cycle());
+                let state = context.once( || (1usize..17).chain((2usize..=18).rev()).cycle());
+                
                 let count: usize = state.borrow_mut().next().unwrap();
 
                 let mut children = Vec::new();
@@ -83,8 +86,8 @@ impl AppHandler for App {
 
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
-        //if let Some(_) = self.previous_clicks.pop_front() {
-        if self.previous_frame.elapsed() > Duration::from_millis(100) {
+        if let Some(_) = self.previous_clicks.pop_front() {
+        //if self.previous_frame.elapsed() > Duration::from_millis(100) {
             let canvas = draw_args.canvas;
             canvas.clear(0);
 
