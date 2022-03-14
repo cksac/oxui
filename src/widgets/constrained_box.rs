@@ -19,12 +19,13 @@ impl Default for ConstrainedBox {
 }
 
 impl Widget for ConstrainedBox {
-    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        context.once_with(
-            || RenderConstrainedBox::new(self.constraints),
-            |element| {
-                element.additional_constraints = self.constraints;
-            },
+    #[track_caller]
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        context.memo(
+            |_| Rc::new(RefCell::new(RenderConstrainedBox::new(self.constraints))),
+            |n| n.borrow().additional_constraints == self.constraints,
+            |n| n.borrow_mut().additional_constraints = self.constraints,
+            |n| n.clone(),
         )
     }
 }

@@ -15,24 +15,24 @@ use skulpin::CoordinateSystem;
 use skulpin::LogicalSize;
 
 #[derive(Debug)]
-pub struct Root;
-impl Widget for Root {
-    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {        
-        //let state = context.state(|| (1usize..17).chain((2usize..=18).rev()).cycle());
-        let state = context.once(|| (1usize..17).chain((2usize..=18).rev()).cycle());
+pub struct RootWidget;
+impl Widget for RootWidget {
+    #[track_caller]
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        let state = context.state(Rc::new(RefCell::new(
+            (2usize..57).chain((3usize..=58).rev()).cycle(),
+        )));
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
         for j in 1..=count {
             children.push({
-                // NOTE: call site state has same result of execution trace?
-                //let state = context.state_slot( j,|| (1usize..17).chain((2usize..=18).rev()).cycle());
-                let state = context.once( || (1usize..17).chain((2usize..=18).rev()).cycle());
-                
-                let count: usize = state.borrow_mut().next().unwrap();
-
+                let v_state = context.state(Rc::new(RefCell::new(
+                    (2usize..17).chain((3usize..=18).rev()).cycle(),
+                )));
+                let v_count: usize = v_state.borrow_mut().next().unwrap();
                 let mut children = Vec::new();
-                for i in 1..=count {
+                for i in 1..=v_count {
                     children
                         .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
                 }
@@ -86,8 +86,8 @@ impl AppHandler for App {
 
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
-        if let Some(_) = self.previous_clicks.pop_front() {
-        //if self.previous_frame.elapsed() > Duration::from_millis(100) {
+        //if let Some(_) = self.previous_clicks.pop_front() {
+        if self.previous_frame.elapsed() > Duration::from_millis(100) {
             let canvas = draw_args.canvas;
             canvas.clear(0);
 
@@ -107,7 +107,8 @@ impl AppHandler for App {
 fn main() {
     // Setup logging
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Warn)
+        .filter_module("compose_rt", log::LevelFilter::Warn)
         .init();
 
     // Set up the coordinate system to be fixed at 900x600, and use this as the default window size
@@ -115,7 +116,7 @@ fn main() {
     // output will be automatically scaled so that it's always visible.
     let logical_size = LogicalSize::new(900, 600);
 
-    let app = App::new(logical_size.width, logical_size.height, Root);
+    let app = App::new(logical_size.width, logical_size.height, RootWidget);
 
     let visible_range = skulpin::skia_safe::Rect {
         left: 0.0,

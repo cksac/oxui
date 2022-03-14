@@ -100,7 +100,7 @@ impl Default for RenderFlex {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RenderFlexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,

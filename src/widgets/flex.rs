@@ -1,5 +1,4 @@
 use std::{cell::RefCell, rc::Rc};
-
 use typed_builder::TypedBuilder;
 
 use crate::{
@@ -40,24 +39,36 @@ pub struct Flex {
 }
 
 impl Widget for Flex {
-    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        context.once_with(
-            || {
+    #[track_caller]
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        context.group_use_children(
+            |_| {
                 let mut flex = RenderFlex::default();
-                // TODO:
                 flex.direction = self.direction;
-
-                for child in self.children.iter() {
-                    flex.children.push(child.create(context));
-                }
-                flex
+                Rc::new(RefCell::new(flex))
             },
-            |flex| {
+            |cx| {
+                for child in self.children.iter() {
+                    child.create(cx);
+                }
+            },
+            |n, children| {
+                let mut flex = n.borrow_mut();
                 flex.children.clear();
-                for child in self.children.iter() {
-                    flex.children.push(child.create(context));
+                for child in children {
+                    if let Some(c) = child.downcast_ref::<RenderFlexible>().cloned() {
+                        flex.children.push(c);
+                    }
                 }
             },
+            |_| {
+                // TODO: condition to skip whole Flex?
+                false
+            },
+            |_| {
+                // TODO
+            },
+            |n| n.clone(),
         )
     }
 }
@@ -70,9 +81,20 @@ pub struct Flexible {
 }
 
 impl Flexible {
-    fn create(&self, context: &BuildContext) -> RenderFlexible {
-        let child = self.child.create(context).into();
-        RenderFlexible::new(child, self.flex, self.fit)
+    #[track_caller]
+    fn create(&self, context: BuildContext) -> RenderFlexible {
+        context.memo(
+            |cx| {
+                let child = self.child.create(cx).into();
+                RenderFlexible::new(child, self.flex, self.fit)
+            },
+            |_| false,
+            |n| {
+                n.flex = self.flex;
+                n.fit = self.fit;
+            },
+            |n| n.clone(),
+        )
     }
 }
 

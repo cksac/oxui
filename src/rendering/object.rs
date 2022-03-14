@@ -1,4 +1,6 @@
-use std::{any::TypeId, cell::RefCell, collections::VecDeque, rc::Rc};
+use std::{any::TypeId, cell::RefCell, rc::Rc};
+
+use compose_rt::{Composer, Recomposer};
 
 use crate::{
     rendering::{BoxConstraints, Offset, RenderBox, Size},
@@ -43,8 +45,8 @@ pub trait RenderObject: Debug {
 
 pub struct PipelineOwner {
     size: Size,
-    root: Box<dyn Widget>,
-    build_context: BuildContext,
+    root_fn: Box<dyn Fn(&mut Composer) -> Rc<RefCell<dyn RenderBox>>>,
+    recomposer: Recomposer,
     render_view: Rc<RefCell<dyn RenderBox>>,
 }
 
@@ -53,13 +55,18 @@ impl PipelineOwner {
     where
         T: 'static + Widget,
     {
-        let root = Box::new(root);
-        let build_context = BuildContext::new();
-        let render_view = root.create(&build_context);
+        let root_fn = Box::new(move |cx: BuildContext| {
+            root.create(cx)
+        });
+
+        let mut recomposer = Recomposer::new();
+        let render_view = (root_fn)(recomposer.composer());
+        //println!("{:#?}", render_view);
+        recomposer.finalize();
         PipelineOwner {
             size,
-            root,
-            build_context,
+            root_fn,
+            recomposer,
             render_view,
         }
     }
@@ -69,10 +76,11 @@ impl PipelineOwner {
     }
 
     pub fn draw_frame(&mut self, context: &mut PaintContext) {
-        // build render tree;
-        self.build_context.reset_cursor();
-        self.render_view = self.root.create(&self.build_context);
-        //println!("{:#?}", tree);
+        // re-build render tree;
+        self.render_view = (self.root_fn)(self.recomposer.composer());
+        self.recomposer.finalize();
+
+        //println!("{:#?}", self.render_view);
         //println!("{:#?}", self.context);
 
         self.flush_layout();
