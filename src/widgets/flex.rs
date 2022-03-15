@@ -4,7 +4,7 @@ use typed_builder::TypedBuilder;
 use crate::{
     rendering::{
         Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, RenderBox,
-        RenderFlex, RenderFlexible, TextBaseline, TextDirection, VerticalDirection,
+        RenderFlex, RenderFlexible, TextBaseline, TextDirection, VerticalDirection, RenderConstrainedBox, BoxConstraints,
     },
     widgets::{BuildContext, Widget},
 };
@@ -41,25 +41,23 @@ pub struct Flex {
 impl Widget for Flex {
     #[track_caller]
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        context.group_use_children(
+        context.group_apply_children(
             |_| {
                 let mut flex = RenderFlex::default();
                 flex.direction = self.direction;
                 Rc::new(RefCell::new(flex))
             },
             |cx| {
+                let mut children = Vec::with_capacity(self.children.len());
                 for child in self.children.iter() {
-                    child.create(cx);
+                    children.push(child.create(cx));
                 }
+                children
             },
             |n, children| {
                 let mut flex = n.borrow_mut();
                 flex.children.clear();
-                for child in children {
-                    if let Some(c) = child.downcast_ref::<RenderFlexible>().cloned() {
-                        flex.children.push(c);
-                    }
-                }
+                flex.children = children;
             },
             |_| {
                 // TODO: condition to skip whole Flex?
@@ -83,10 +81,16 @@ pub struct Flexible {
 impl Flexible {
     #[track_caller]
     fn create(&self, context: BuildContext) -> RenderFlexible {
-        context.memo(
+        context.group_apply_children(
             |cx| {
-                let child = self.child.create(cx).into();
-                RenderFlexible::new(child, self.flex, self.fit)
+                // temp set child to RenderConstrainedBox first
+                RenderFlexible::new(Rc::new(RefCell::new(RenderConstrainedBox::new(BoxConstraints::default()))), self.flex, self.fit)
+            },
+            |cx| {
+                self.child.create(cx)
+            },
+            |flexible, child: Rc<RefCell<dyn RenderBox>>| {
+                flexible.inner = child;
             },
             |_| false,
             |n| {

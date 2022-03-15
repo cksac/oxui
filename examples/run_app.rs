@@ -25,24 +25,29 @@ impl Widget for RootWidget {
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
-        for j in 1..=count {
-            children.push({
-                let v_state = context.state(Rc::new(RefCell::new(
-                    (2usize..17).chain((3usize..=18).rev()).cycle(),
-                )));
-                let v_count: usize = v_state.borrow_mut().next().unwrap();
-                let mut children = Vec::new();
-                for i in 1..=v_count {
-                    children
-                        .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
-                }
+        // for j in 1..=count {
+        //     children.push({
+        //         let v_state = context.state(Rc::new(RefCell::new(
+        //             (2usize..17).chain((3usize..=18).rev()).cycle(),
+        //         )));
+        //         let v_count: usize = v_state.borrow_mut().next().unwrap();
+        //         let mut children = Vec::new();
+        //         for i in 1..=v_count {
+        //             children
+        //                 .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+        //         }
 
-                Flex::builder()
-                    .direction(Axis::Vertical)
-                    .children(children)
-                    .build()
-                    .into_flexible(j, FlexFit::Loose)
-            });
+        //         Flex::builder()
+        //             .direction(Axis::Vertical)
+        //             .children(children)
+        //             .build()
+        //             .into_flexible(j, FlexFit::Loose)
+        //     });
+        // }
+
+        for i in 1..=count {
+            children
+                .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
         }
 
         Flex::builder().children(children).build().create(context)

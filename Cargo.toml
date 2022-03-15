@@ -15,5 +15,5 @@ compose-rt = { git = "https://github.com/cksac/compose-rt" }
 [dev-dependencies]
 env_logger = "0.6"
 
-# [profile.release]
-# debug = true
+[profile.release]
+debug = true
