@@ -1,8 +1,9 @@
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
+use compose_rt::Recomposer;
 use oxui::rendering::{Axis, FlexFit, Offset, PipelineOwner, Size};
 use oxui::rendering::{PaintContext, RenderBox};
 use oxui::widgets::{BuildContext, ConstrainedBox, Flex, Widget};
@@ -15,39 +16,42 @@ use skulpin::CoordinateSystem;
 use skulpin::LogicalSize;
 
 #[derive(Debug)]
-pub struct Root;
-impl Widget for Root {
-    fn create(&self, context: &BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        let mut children = Vec::new();
-
-        let state = context.once(|| (2usize..6).chain((3usize..=8).rev()).cycle());
+pub struct RootWidget;
+impl Widget for RootWidget {
+    #[track_caller]
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+        let state = context.state(Rc::new(RefCell::new(
+            (2usize..57).chain((3usize..=58).rev()).cycle(),
+        )));
         let count: usize = state.borrow_mut().next().unwrap();
 
-        for i in 1..=count {
-            children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+        let mut children = Vec::new();
+        for j in 1..=count {
+            children.push({
+                let v_state = context.state(Rc::new(RefCell::new(
+                    (2usize..57).chain((3usize..=58).rev()).cycle(), //(2usize..4).cycle(),
+                )));
+                let v_count: usize = v_state.borrow_mut().next().unwrap();
+                let mut children = Vec::new();
+                for i in 1..=v_count {
+                    children
+                        .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+                }
+
+                Flex::builder()
+                    .direction(Axis::Vertical)
+                    .children(children)
+                    .build()
+                    .into_flexible(j, FlexFit::Loose)
+            });
         }
-
-        children.push({
-            let state = context.once(|| (2usize..6).chain((3usize..=8).rev()).cycle());
-            let count: usize = state.borrow_mut().next().unwrap();
-
-            let mut children = Vec::new();
-            for i in 1..=count {
-                children.push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
-            }
-
-            Flex::builder()
-                .direction(Axis::Vertical)
-                .children(children)
-                .build()
-                .into_flexible(6, FlexFit::Loose)
-        });
 
         Flex::builder().children(children).build().create(context)
     }
 }
 
 struct App {
+    recomposer: Recomposer,
     pipeline: PipelineOwner,
     previous_clicks: VecDeque<Offset>,
     previous_frame: Instant,
@@ -59,6 +63,7 @@ impl App {
         W: 'static + Widget,
     {
         App {
+            recomposer: Recomposer::new(),
             pipeline: PipelineOwner::new(Size::new(width as f32, height as f32), root),
             previous_clicks: VecDeque::new(),
             previous_frame: Instant::now(),
@@ -93,7 +98,11 @@ impl AppHandler for App {
             canvas.clear(0);
 
             let mut context = PaintContext::new(canvas);
-            self.pipeline.draw_frame(&mut context);
+            self.recomposer.compose(
+                |cx| {
+                    self.pipeline.draw_frame(cx, &mut context);
+                }
+            );
             self.previous_frame = draw_args.time_state.current_instant();
         }
     }
@@ -108,7 +117,8 @@ impl AppHandler for App {
 fn main() {
     // Setup logging
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Warn)
+        .filter_module("compose_rt", log::LevelFilter::Trace)
         .init();
 
     // Set up the coordinate system to be fixed at 900x600, and use this as the default window size
@@ -116,7 +126,7 @@ fn main() {
     // output will be automatically scaled so that it's always visible.
     let logical_size = LogicalSize::new(900, 600);
 
-    let app = App::new(logical_size.width, logical_size.height, Root);
+    let app = App::new(logical_size.width, logical_size.height, RootWidget);
 
     let visible_range = skulpin::skia_safe::Rect {
         left: 0.0,

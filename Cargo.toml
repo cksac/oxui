@@ -10,10 +10,10 @@ skulpin = { version = "0.14", features = ["winit-app", "winit-latest"] }
 log = "0.4"
 typed-builder = "0.10.0"
 downcast-rs = "1.2.0"
-compose-rt = { git = "https://github.com/cksac/compose-rt" }
+compose-rt = "0.8"
 
 [dev-dependencies]
-env_logger = "0.6"
+env_logger = "0.7"
 
 [profile.release]
 debug = true

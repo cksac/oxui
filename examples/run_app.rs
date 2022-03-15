@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use compose_rt::Recomposer;
 use oxui::rendering::{Axis, FlexFit, Offset, PipelineOwner, Size};
 use oxui::rendering::{PaintContext, RenderBox};
 use oxui::widgets::{BuildContext, ConstrainedBox, Flex, Widget};
@@ -25,29 +26,24 @@ impl Widget for RootWidget {
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
-        // for j in 1..=count {
-        //     children.push({
-        //         let v_state = context.state(Rc::new(RefCell::new(
-        //             (2usize..17).chain((3usize..=18).rev()).cycle(),
-        //         )));
-        //         let v_count: usize = v_state.borrow_mut().next().unwrap();
-        //         let mut children = Vec::new();
-        //         for i in 1..=v_count {
-        //             children
-        //                 .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
-        //         }
+        for j in 1..=count {
+            children.push({
+                let v_state = context.state(Rc::new(RefCell::new(
+                    (2usize..57).chain((3usize..=58).rev()).cycle(), //(2usize..4).cycle(),
+                )));
+                let v_count: usize = v_state.borrow_mut().next().unwrap();
+                let mut children = Vec::new();
+                for i in 1..=v_count {
+                    children
+                        .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+                }
 
-        //         Flex::builder()
-        //             .direction(Axis::Vertical)
-        //             .children(children)
-        //             .build()
-        //             .into_flexible(j, FlexFit::Loose)
-        //     });
-        // }
-
-        for i in 1..=count {
-            children
-                .push(ConstrainedBox::default().into_flexible(i as usize, FlexFit::Loose))
+                Flex::builder()
+                    .direction(Axis::Vertical)
+                    .children(children)
+                    .build()
+                    .into_flexible(j, FlexFit::Loose)
+            });
         }
 
         Flex::builder().children(children).build().create(context)
@@ -55,6 +51,7 @@ impl Widget for RootWidget {
 }
 
 struct App {
+    recomposer: Recomposer,
     pipeline: PipelineOwner,
     previous_clicks: VecDeque<bool>,
     previous_frame: Instant,
@@ -66,6 +63,7 @@ impl App {
         W: 'static + Widget,
     {
         App {
+            recomposer: Recomposer::new(),
             pipeline: PipelineOwner::new(Size::new(width as f32, height as f32), root),
             previous_clicks: VecDeque::new(),
             previous_frame: Instant::now(),
@@ -97,7 +95,13 @@ impl AppHandler for App {
             canvas.clear(0);
 
             let mut context = PaintContext::new(canvas);
-            self.pipeline.draw_frame(&mut context);
+
+            self.recomposer.compose(
+                |cx| {
+                    self.pipeline.draw_frame(cx, &mut context);
+                }
+            );
+
             self.previous_frame = draw_args.time_state.current_instant();
         }
     }

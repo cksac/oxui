@@ -1,6 +1,6 @@
 use std::{any::TypeId, cell::RefCell, rc::Rc};
 
-use compose_rt::{Composer, Recomposer};
+use compose_rt::Composer;
 
 use crate::{
     rendering::{BoxConstraints, Offset, RenderBox, Size},
@@ -46,8 +46,7 @@ pub trait RenderObject: Debug {
 pub struct PipelineOwner {
     size: Size,
     root_fn: Box<dyn Fn(&mut Composer) -> Rc<RefCell<dyn RenderBox>>>,
-    recomposer: Recomposer,
-    render_view: Rc<RefCell<dyn RenderBox>>,
+    render_view: Option<Rc<RefCell<dyn RenderBox>>>,
 }
 
 impl PipelineOwner {
@@ -55,30 +54,23 @@ impl PipelineOwner {
     where
         T: 'static + Widget,
     {
-        let root_fn = Box::new(move |cx: BuildContext| {
-            root.create(cx)
-        });
-
-        let mut recomposer = Recomposer::new();
-        let render_view = (root_fn)(recomposer.composer());
-        //println!("{:#?}", render_view);
-        recomposer.finalize();
+        let root_fn = Box::new(move |cx: BuildContext| root.create(cx));
         PipelineOwner {
             size,
             root_fn,
-            recomposer,
-            render_view,
+            render_view: None,
         }
     }
 
     pub fn handle_event(&mut self, position: Offset) {
-        self.render_view.borrow().hit_test(position);
+        if let Some(view) = &mut self.render_view {
+            view.borrow().hit_test(position);
+        }
     }
 
-    pub fn draw_frame(&mut self, context: &mut PaintContext) {
+    pub fn draw_frame(&mut self, cx: &mut Composer, context: &mut PaintContext) {
         // re-build render tree;
-        self.render_view = (self.root_fn)(self.recomposer.composer());
-        self.recomposer.finalize();
+        self.render_view = Some((self.root_fn)(cx));
 
         //println!("{:#?}", self.render_view);
         //println!("{:#?}", self.context);
@@ -88,11 +80,15 @@ impl PipelineOwner {
     }
 
     pub fn flush_layout(&mut self) {
-        let ref constraints = BoxConstraints::tight(self.size);
-        self.render_view.borrow_mut().layout(constraints, false)
+        if let Some(view) = &mut self.render_view {
+            let ref constraints = BoxConstraints::tight(self.size);
+            view.borrow_mut().layout(constraints, false)
+        }
     }
 
     pub fn flush_paint(&mut self, context: &mut PaintContext) {
-        self.render_view.borrow_mut().paint(context, Offset::zero());
+        if let Some(view) = &mut self.render_view {
+            view.borrow_mut().paint(context, Offset::zero());
+        }
     }
 }
