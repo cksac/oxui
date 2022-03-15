@@ -3,8 +3,9 @@ use typed_builder::TypedBuilder;
 
 use crate::{
     rendering::{
-        Axis, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize, RenderBox,
-        RenderFlex, RenderFlexible, TextBaseline, TextDirection, VerticalDirection, RenderConstrainedBox, BoxConstraints,
+        Axis, BoxConstraints, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize,
+        RenderBox, RenderConstrainedBox, RenderFlex, RenderFlexible, TextBaseline, TextDirection,
+        VerticalDirection,
     },
     widgets::{BuildContext, Widget},
 };
@@ -84,11 +85,15 @@ impl Flexible {
         context.group_apply_children(
             |cx| {
                 // temp set child to RenderConstrainedBox first
-                RenderFlexible::new(Rc::new(RefCell::new(RenderConstrainedBox::new(BoxConstraints::default()))), self.flex, self.fit)
+                RenderFlexible::new(
+                    Rc::new(RefCell::new(RenderConstrainedBox::new(
+                        BoxConstraints::default(),
+                    ))),
+                    self.flex,
+                    self.fit,
+                )
             },
-            |cx| {
-                self.child.create(cx)
-            },
+            |cx| self.child.create(cx),
             |flexible, child: Rc<RefCell<dyn RenderBox>>| {
                 flexible.inner = child;
             },
