@@ -16,19 +16,17 @@ Experimental and very early stage, it is far from usable.
 - [ ] Widgets
     - [x] Flex
     - [x] Constrained Box
-    - ...
+    - [ ] ...
 - [ ] Rendering object
-    - [^] RenderFlex
-    - ...
+    - [x] RenderFlex
+    - [ ] ...
 - [ ] App runner    
 - [ ] event handling
-    - [^] hit test
-    - ...
+    - [x] hit test
+    - [ ] ...
 - [ ] optimization
     - [ ] repaint boundary
     - [ ] layer composition
-
-^: partially
 
 
 ## Examples
