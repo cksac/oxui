@@ -32,6 +32,9 @@ Experimental and very early stage, it is far from usable.
 
 
 ## Examples
-- Flex layout with positional state test
+- Nested Flex layout with positional state test
     - cargo run --example run_app
+    
+        https://user-images.githubusercontent.com/147393/158579311-0ac253f7-5cfc-464d-93d6-66e66dd288a0.mov
+
 
