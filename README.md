@@ -2,7 +2,6 @@
 Cross platform native GUI in Rust
 
 ## GUI with ideas from
----
 - Flutter
     - Widget Tree
     - Render Object
@@ -13,7 +12,6 @@ Cross platform native GUI in Rust
     - Incremental computation
 
 ## Status
----
 Experimental and very early stage, it is far from usable.
 - [ ] Widgets
     - [x] Flex
@@ -34,7 +32,6 @@ Experimental and very early stage, it is far from usable.
 
 
 ## Examples
----
 - Flex layout with positional state test
     - cargo run --example run_app
 
