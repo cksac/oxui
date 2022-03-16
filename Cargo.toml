@@ -10,7 +10,8 @@ skulpin = { version = "0.14", features = ["winit-app", "winit-latest"] }
 log = "0.4"
 typed-builder = "0.10.0"
 downcast-rs = "1.2.0"
-compose-rt = "0.9"
+compose-rt = "0.10"
+
 
 [dev-dependencies]
 env_logger = "0.7"

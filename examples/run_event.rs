@@ -20,7 +20,7 @@ pub struct RootWidget;
 impl Widget for RootWidget {
     #[track_caller]
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        let state = context.state(Rc::new(RefCell::new(
+        let state = context.state(|| Rc::new(RefCell::new(
             (2usize..57).chain((3usize..=58).rev()).cycle(),
         )));
         let count: usize = state.borrow_mut().next().unwrap();
@@ -28,7 +28,7 @@ impl Widget for RootWidget {
         let mut children = Vec::new();
         for j in 1..=count {
             children.push({
-                let v_state = context.state(Rc::new(RefCell::new(
+                let v_state = context.state(|| Rc::new(RefCell::new(
                     (2usize..57).chain((3usize..=58).rev()).cycle(), //(2usize..4).cycle(),
                 )));
                 let v_count: usize = v_state.borrow_mut().next().unwrap();
