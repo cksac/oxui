@@ -6,9 +6,9 @@ Cross platform native GUI in Rust
     - Widget Tree
     - Render Object
     - Skia
-- Jetpack Compose
-    - [compose runtime](https://github.com/cksac/compose-rt)
-    - State via positional memorization
+- Jetpack Compose    
+    - Positional memorization runtime
+        - [compose-rt](https://github.com/cksac/compose-rt) written in Rust
     - Incremental computation
 
 ## Status
