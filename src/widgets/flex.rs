@@ -42,11 +42,15 @@ pub struct Flex {
 impl Widget for Flex {
     #[track_caller]
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        context.group_apply_children(
+        context.group(
             |_| {
                 let mut flex = RenderFlex::default();
                 flex.direction = self.direction;
                 Rc::new(RefCell::new(flex))
+            },
+            |_| {
+                // TODO: condition to skip whole Flex?
+                false
             },
             |cx| {
                 let mut children = Vec::with_capacity(self.children.len());
@@ -59,13 +63,6 @@ impl Widget for Flex {
                 let mut flex = n.borrow_mut();
                 flex.children.clear();
                 flex.children = children;
-            },
-            |_| {
-                // TODO: condition to skip whole Flex?
-                false
-            },
-            |_| {
-                // TODO
             },
             |n| n.clone(),
         )
@@ -82,7 +79,7 @@ pub struct Flexible {
 impl Flexible {
     #[track_caller]
     fn create(&self, context: BuildContext) -> RenderFlexible {
-        context.group_apply_children(
+        context.group(
             |cx| {
                 // temp set child to RenderConstrainedBox first
                 RenderFlexible::new(
@@ -93,14 +90,12 @@ impl Flexible {
                     self.fit,
                 )
             },
+            |n| false,
             |cx| self.child.create(cx),
-            |flexible, child: Rc<RefCell<dyn RenderBox>>| {
-                flexible.inner = child;
-            },
-            |_| false,
-            |n| {
+            |n, child| {
                 n.flex = self.flex;
                 n.fit = self.fit;
+                n.inner = child
             },
             |n| n.clone(),
         )

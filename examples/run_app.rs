@@ -20,17 +20,21 @@ pub struct RootWidget;
 impl Widget for RootWidget {
     #[track_caller]
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
-        let state = context.state(|| Rc::new(RefCell::new(
-            (2usize..57).chain((3usize..=58).rev()).cycle(),
-        )));
+        let state = context.state(|| {
+            Rc::new(RefCell::new(
+                (2usize..57).chain((3usize..=58).rev()).cycle(),
+            ))
+        });
         let count: usize = state.borrow_mut().next().unwrap();
 
         let mut children = Vec::new();
         for j in 1..=count {
             children.push({
-                let v_state = context.state(|| Rc::new(RefCell::new(
-                    (2usize..57).chain((3usize..=58).rev()).cycle(), //(2usize..4).cycle(),
-                )));
+                let v_state = context.state(|| {
+                    Rc::new(RefCell::new(
+                        (2usize..257).chain((3usize..=258).rev()).cycle(), //(2usize..4).cycle(),
+                    ))
+                });
                 let v_count: usize = v_state.borrow_mut().next().unwrap();
                 let mut children = Vec::new();
                 for i in 1..=v_count {
@@ -90,17 +94,15 @@ impl AppHandler for App {
     fn draw(&mut self, draw_args: AppDrawArgs) {
         // click to next frame
         //if let Some(_) = self.previous_clicks.pop_front() {
-        if self.previous_frame.elapsed() > Duration::from_millis(100) {
+        if self.previous_frame.elapsed() > Duration::from_millis(16) {
             let canvas = draw_args.canvas;
             canvas.clear(0);
 
             let mut context = PaintContext::new(canvas);
 
-            self.recomposer.compose(
-                |cx| {
-                    self.pipeline.draw_frame(cx, &mut context);
-                }
-            );
+            self.recomposer.compose(|cx| {
+                self.pipeline.draw_frame(cx, &mut context);
+            });
 
             self.previous_frame = draw_args.time_state.current_instant();
         }
@@ -116,8 +118,8 @@ impl AppHandler for App {
 fn main() {
     // Setup logging
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Warn)
-        .filter_module("compose_rt", log::LevelFilter::Warn)
+        .filter_level(log::LevelFilter::Debug)
+        .filter_module("compose_rt", log::LevelFilter::Info)
         .init();
 
     // Set up the coordinate system to be fixed at 900x600, and use this as the default window size
