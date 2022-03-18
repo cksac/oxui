@@ -67,7 +67,7 @@ impl App {
         W: 'static + Widget,
     {
         App {
-            recomposer: Recomposer::new(),
+            recomposer: Recomposer::new(1000),
             pipeline: PipelineOwner::new(Size::new(width as f32, height as f32), root),
             previous_clicks: VecDeque::new(),
             previous_frame: Instant::now(),
