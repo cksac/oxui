@@ -4,9 +4,12 @@ use std::{
     rc::Rc,
 };
 
-use crate::rendering::{
-    Axis, AxisDirection, BoxConstraints, GrowthDirection, Offset, RenderBox, RenderObject,
-    RenderSliver, ScrollDirection, Size, SliverConstraints,
+use crate::{
+    gestures::HitTestTarget,
+    rendering::{
+        Axis, AxisDirection, BoxConstraints, GrowthDirection, Offset, RenderBox, RenderObject,
+        RenderSliver, ScrollDirection, Size, SliverConstraints,
+    },
 };
 
 #[derive(Debug)]
@@ -35,6 +38,8 @@ impl RenderSliverList {
         self
     }
 }
+
+impl HitTestTarget for RenderSliverList {}
 
 impl RenderObject for RenderSliverList {
     fn ty_id(&self) -> std::any::TypeId {

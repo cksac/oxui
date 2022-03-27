@@ -3,6 +3,7 @@ use std::any::TypeId;
 use compose_rt::Composer;
 
 use crate::{
+    gestures::HitTestTarget,
     rendering::{BoxConstraints, Element, Offset, Size},
     widgets::{BuildContext, Widget},
 };
@@ -35,7 +36,7 @@ impl<'a> PaintContext<'a> {
     }
 }
 
-pub trait RenderObject: Debug {
+pub trait RenderObject: Debug + HitTestTarget {
     fn ty_id(&self) -> TypeId;
 
     fn ty_name(&self) -> &'static str;

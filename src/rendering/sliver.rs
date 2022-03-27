@@ -1,7 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::rendering::{
-    Axis, AxisDirection, BoxConstraints, RenderBox, RenderObject, ScrollDirection,
+use crate::{
+    gestures::HitTestTarget,
+    rendering::{Axis, AxisDirection, BoxConstraints, RenderBox, RenderObject, ScrollDirection},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +97,8 @@ pub struct RenderSliverToBoxAdapter {
     geometry: SliverGeometry,
     child: Rc<RefCell<dyn RenderBox>>,
 }
+
+impl HitTestTarget for RenderSliverToBoxAdapter {}
 
 impl RenderObject for RenderSliverToBoxAdapter {
     fn ty_id(&self) -> std::any::TypeId {

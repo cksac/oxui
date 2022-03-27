@@ -3,7 +3,7 @@ use std::{cell::RefCell, fmt::Debug, rc::Rc};
 use crate::rendering::Offset;
 
 pub trait HitTestTarget: Debug {
-    fn handle_event(&mut self, event: PointerEvent, entry: HitTestEntry);
+    fn handle_event(&mut self, event: PointerEvent, entry: HitTestEntry) {}
 }
 
 #[derive(Debug)]
@@ -25,6 +25,12 @@ impl HitTestResult {
 pub struct HitTestEntry {
     target: Rc<RefCell<dyn HitTestTarget>>,
     //transform: Option<Matrix4>
+}
+
+impl HitTestEntry {
+    pub fn new(target: Rc<RefCell<dyn HitTestTarget>>) -> Self {
+        HitTestEntry { target }
+    }
 }
 
 #[derive(Debug)]

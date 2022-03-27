@@ -4,7 +4,10 @@ use std::{
     rc::Rc,
 };
 
-use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
+use crate::{
+    gestures::HitTestTarget,
+    rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size},
+};
 
 #[derive(Debug)]
 pub struct RenderConstrainedBox {
@@ -25,6 +28,8 @@ impl RenderConstrainedBox {
         }
     }
 }
+
+impl HitTestTarget for RenderConstrainedBox {}
 
 impl RenderObject for RenderConstrainedBox {
     fn ty_id(&self) -> TypeId {

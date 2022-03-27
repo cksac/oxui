@@ -1,3 +1,4 @@
+use crate::gestures::HitTestTarget;
 use crate::rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size};
 use crate::ui::Image;
 use std::any::{type_name, TypeId};
@@ -47,6 +48,8 @@ impl From<Image> for RenderImage {
         }
     }
 }
+
+impl HitTestTarget for RenderImage {}
 
 impl RenderObject for RenderImage {
     fn ty_id(&self) -> TypeId {

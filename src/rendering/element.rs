@@ -1,4 +1,7 @@
-use crate::rendering::RenderBox;
+use crate::{
+    gestures::{HitTestEntry, HitTestResult, HitTestTarget},
+    rendering::{Offset, RenderBox},
+};
 use std::{
     cell::RefCell,
     ops::{Deref, DerefMut},
@@ -13,6 +16,13 @@ pub struct Element {
 impl Element {
     pub fn new(v: Rc<RefCell<dyn RenderBox>>) -> Self {
         Element { render_box: v }
+    }
+
+    pub fn hit_test(&self, position: Offset, result: &mut HitTestResult) {
+        if self.render_box.borrow().hit_test(position) {
+            let entry = HitTestEntry::new(self.render_box.clone());
+            result.add(entry);
+        }
     }
 }
 

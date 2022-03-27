@@ -1,5 +1,5 @@
 use crate::{
-    guestures::HitTestResult,
+    gestures::HitTestResult,
     rendering::{Offset, RenderObject, Size},
 };
 

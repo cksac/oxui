@@ -1,8 +1,11 @@
 use std::any::{type_name, TypeId};
 
-use crate::rendering::{
-    Axis, BoxConstraints, Clip, Element, Offset, PaintContext, RenderBox, RenderObject, Size,
-    TextBaseline, TextDirection, VerticalDirection,
+use crate::{
+    gestures::HitTestTarget,
+    rendering::{
+        Axis, BoxConstraints, Clip, Element, Offset, PaintContext, RenderBox, RenderObject, Size,
+        TextBaseline, TextDirection, VerticalDirection,
+    },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -239,6 +242,8 @@ impl RenderFlex {
         }
     }
 }
+
+impl HitTestTarget for RenderFlex {}
 
 impl RenderObject for RenderFlex {
     fn ty_id(&self) -> std::any::TypeId {
