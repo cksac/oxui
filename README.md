@@ -12,7 +12,9 @@ Cross platform native GUI in Rust
     - Incremental computation
 
 ## Status
-Experimental and very early stage, it is far from usable.
+- Experimental and very early stage, it is far from usable.
+- Contribution is welcome if you also intrested in building GUI framework :)
+
 - [ ] Widgets
     - [x] Flex
     - [x] Constrained Box
