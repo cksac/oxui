@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    rendering::{BoxConstraints, RenderBox, RenderConstrainedBox},
+    rendering::{BoxConstraints, Element, RenderConstrainedBox},
     widgets::{BuildContext, Widget},
 };
 
@@ -20,12 +20,12 @@ impl Default for ConstrainedBox {
 
 impl Widget for ConstrainedBox {
     #[track_caller]
-    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+    fn create(&self, context: BuildContext) -> Element {
         context.memo(
             |_| Rc::new(RefCell::new(RenderConstrainedBox::new(self.constraints))),
             |n| n.borrow().additional_constraints == self.constraints,
             |n| n.borrow_mut().additional_constraints = self.constraints,
-            |n| n.clone(),
+            |n| Element::new(n.clone()),
         )
     }
 }

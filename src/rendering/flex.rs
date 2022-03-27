@@ -1,14 +1,8 @@
-use std::{
-    any::{type_name, TypeId},
-    cell::RefCell,
-    rc::Rc,
-};
-
-use skia_safe::svg::canvas;
+use std::any::{type_name, TypeId};
 
 use crate::rendering::{
-    Axis, BoxConstraints, Clip, Offset, PaintContext, RenderBox, RenderObject, Size, TextBaseline,
-    TextDirection, VerticalDirection,
+    Axis, BoxConstraints, Clip, Element, Offset, PaintContext, RenderBox, RenderObject, Size,
+    TextBaseline, TextDirection, VerticalDirection,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,11 +99,11 @@ pub struct RenderFlexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
-    pub(crate) inner: Rc<RefCell<dyn RenderBox>>,
+    pub(crate) inner: Element,
 }
 
 impl RenderFlexible {
-    pub fn new(child: Rc<RefCell<dyn RenderBox>>, flex: usize, fit: FlexFit) -> Self {
+    pub fn new(child: Element, flex: usize, fit: FlexFit) -> Self {
         RenderFlexible {
             offset: Offset::zero(),
             flex,

@@ -1,4 +1,7 @@
-use crate::rendering::{Offset, RenderObject, Size};
+use crate::{
+    guestures::HitTestResult,
+    rendering::{Offset, RenderObject, Size},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoxConstraints {

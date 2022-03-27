@@ -1,11 +1,11 @@
-use std::{any::TypeId, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 use typed_builder::TypedBuilder;
 
 use crate::{
     rendering::{
-        Axis, BoxConstraints, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize,
-        RenderBox, RenderConstrainedBox, RenderFlex, RenderFlexible, TextBaseline, TextDirection,
-        VerticalDirection,
+        Axis, BoxConstraints, Clip, CrossAxisAlignment, Element, FlexFit, MainAxisAlignment,
+        MainAxisSize, RenderConstrainedBox, RenderFlex, RenderFlexible, TextBaseline,
+        TextDirection, VerticalDirection,
     },
     widgets::{BuildContext, Widget},
 };
@@ -41,7 +41,7 @@ pub struct Flex {
 
 impl Widget for Flex {
     #[track_caller]
-    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
+    fn create(&self, context: BuildContext) -> Element {
         context.group(
             |_| {
                 let mut flex = RenderFlex::default();
@@ -64,7 +64,7 @@ impl Widget for Flex {
                 flex.children.clear();
                 flex.children = children;
             },
-            |n| n.clone(),
+            |n| Element::new(n.clone()),
         )
     }
 }
@@ -83,9 +83,7 @@ impl Flexible {
             |cx| {
                 // temp set child to RenderConstrainedBox first
                 RenderFlexible::new(
-                    Rc::new(RefCell::new(RenderConstrainedBox::new(
-                        BoxConstraints::default(),
-                    ))),
+                    RenderConstrainedBox::new(BoxConstraints::default()).into(),
                     self.flex,
                     self.fit,
                 )

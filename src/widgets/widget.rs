@@ -1,20 +1,20 @@
 use compose_rt::Composer;
 
 use crate::{
-    rendering::{FlexFit, RenderBox, RenderSliver},
+    rendering::{Element, FlexFit, RenderSliver},
     widgets::Flexible,
 };
 use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 // pub struct BuildContext<'a> {
-//     cx: &'a mut Composer
+//     pub cx: &'a mut Composer,
 // }
 
 pub type BuildContext<'a> = &'a mut Composer;
 
 pub trait Widget: Debug {
     #[track_caller]
-    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>>;
+    fn create(&self, context: BuildContext) -> Element;
 
     fn into_flexible(self, flex: usize, fit: FlexFit) -> Flexible
     where

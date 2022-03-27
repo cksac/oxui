@@ -1,9 +1,9 @@
-use std::{any::TypeId, cell::RefCell, rc::Rc};
+use std::any::TypeId;
 
 use compose_rt::Composer;
 
 use crate::{
-    rendering::{BoxConstraints, Offset, RenderBox, Size},
+    rendering::{BoxConstraints, Element, Offset, Size},
     widgets::{BuildContext, Widget},
 };
 use std::fmt::Debug;
@@ -45,8 +45,8 @@ pub trait RenderObject: Debug {
 
 pub struct PipelineOwner {
     size: Size,
-    root_fn: Box<dyn Fn(&mut Composer) -> Rc<RefCell<dyn RenderBox>>>,
-    render_view: Option<Rc<RefCell<dyn RenderBox>>>,
+    root_fn: Box<dyn Fn(&mut Composer) -> Element>,
+    render_view: Option<Element>,
 }
 
 impl PipelineOwner {
