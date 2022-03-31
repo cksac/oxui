@@ -1,7 +1,4 @@
-use crate::{
-    gestures::HitTestResult,
-    rendering::{Offset, RenderObject, Size},
-};
+use crate::rendering::{Offset, RenderObject, Size};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoxConstraints {
@@ -177,13 +174,6 @@ impl BoxConstraints {
     }
 }
 
-pub struct IntrinsicSize {
-    pub min_intrinsic_width: f32,
-    pub min_intrinsic_height: f32,
-    pub max_intrinsic_width: f32,
-    pub max_intrinsic_height: f32,
-}
-
 pub trait RenderBox: RenderObject {
     fn layout(&mut self, constraints: &BoxConstraints, parent_use_size: bool) {
         self.perform_layout(constraints)
@@ -194,24 +184,4 @@ pub trait RenderBox: RenderObject {
     fn perform_resize(&mut self, constraints: &BoxConstraints);
 
     fn size(&self) -> Size;
-
-    fn intrinsic_size(&self) -> Option<IntrinsicSize> {
-        None
-    }
-
-    fn hit_test(&self, position: Offset) -> bool {
-        if self.hit_test_children(position) || self.hit_test_self(position) {
-            println!("{:?}", self.ty_name());
-            return true;
-        }
-        false
-    }
-
-    fn hit_test_self(&self, position: Offset) -> bool {
-        self.size().contains(position)
-    }
-
-    fn hit_test_children(&self, position: Offset) -> bool {
-        false
-    }
 }

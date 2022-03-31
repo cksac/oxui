@@ -8,7 +8,7 @@ pub trait HitTestTarget: Debug {
 
 #[derive(Debug)]
 pub struct HitTestResult {
-    path: Vec<HitTestEntry>,
+    pub(crate) path: Vec<HitTestEntry>,
 }
 
 impl HitTestResult {
@@ -21,9 +21,9 @@ impl HitTestResult {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HitTestEntry {
-    target: Rc<RefCell<dyn HitTestTarget>>,
+    pub(crate) target: Rc<RefCell<dyn HitTestTarget>>,
     //transform: Option<Matrix4>
 }
 

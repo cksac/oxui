@@ -3,9 +3,9 @@ use typed_builder::TypedBuilder;
 
 use crate::{
     rendering::{
-        Axis, BoxConstraints, Clip, CrossAxisAlignment, Element, FlexFit, MainAxisAlignment,
-        MainAxisSize, RenderConstrainedBox, RenderFlex, RenderFlexible, TextBaseline,
-        TextDirection, VerticalDirection,
+        Axis, BoxConstraints, Clip, CrossAxisAlignment, FlexFit, MainAxisAlignment, MainAxisSize,
+        RenderBox, RenderConstrainedBox, RenderFlex, RenderFlexible, TextBaseline, TextDirection,
+        VerticalDirection,
     },
     widgets::{BuildContext, Widget},
 };
@@ -41,7 +41,7 @@ pub struct Flex {
 
 impl Widget for Flex {
     #[track_caller]
-    fn create(&self, context: BuildContext) -> Element {
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
         context.group(
             |_| {
                 let mut flex = RenderFlex::default();
@@ -64,7 +64,7 @@ impl Widget for Flex {
                 flex.children.clear();
                 flex.children = children;
             },
-            |n| Element::new(n.clone()),
+            |n| n.clone(),
         )
     }
 }
@@ -83,7 +83,7 @@ impl Flexible {
             |cx| {
                 // temp set child to RenderConstrainedBox first
                 RenderFlexible::new(
-                    RenderConstrainedBox::new(BoxConstraints::default()).into(),
+                    RenderConstrainedBox::new(BoxConstraints::default()),
                     self.flex,
                     self.fit,
                 )

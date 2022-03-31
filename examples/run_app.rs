@@ -4,8 +4,8 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use compose_rt::Recomposer;
-use oxui::rendering::PaintContext;
-use oxui::rendering::{Axis, Element, FlexFit, PipelineOwner, Size};
+use oxui::rendering::{Axis, FlexFit, PipelineOwner, Size};
+use oxui::rendering::{PaintContext, RenderBox};
 use oxui::widgets::{BuildContext, ConstrainedBox, Flex, Widget};
 use skulpin::app::AppDrawArgs;
 use skulpin::app::AppError;
@@ -19,7 +19,7 @@ use skulpin::LogicalSize;
 pub struct RootWidget;
 impl Widget for RootWidget {
     #[track_caller]
-    fn create(&self, context: BuildContext) -> Element {
+    fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
         let state = context.state(|| {
             Rc::new(RefCell::new(
                 (2usize..57).chain((3usize..=58).rev()).cycle(),

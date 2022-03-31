@@ -1,14 +1,14 @@
 mod basic_types;
 pub use basic_types::*;
 
-mod element;
-pub use element::*;
-
 mod object;
 pub use object::*;
 
 mod r#box;
 pub use r#box::*;
+
+mod render_view;
+pub use render_view::*;
 
 mod proxy_box;
 pub use proxy_box::*;

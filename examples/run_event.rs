@@ -120,7 +120,7 @@ fn main() {
     // Setup logging
     env_logger::Builder::from_default_env()
         .filter_level(log::LevelFilter::Warn)
-        .filter_module("compose_rt", log::LevelFilter::Trace)
+        .filter_module("compose_rt", log::LevelFilter::Debug)
         .init();
 
     // Set up the coordinate system to be fixed at 900x600, and use this as the default window size

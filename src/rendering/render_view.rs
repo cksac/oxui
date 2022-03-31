@@ -5,33 +5,30 @@ use std::{
 };
 
 use crate::{
-    gestures::HitTestTarget,
+    gestures::{HitTestEntry, HitTestResult, HitTestTarget},
     rendering::{BoxConstraints, Offset, PaintContext, RenderBox, RenderObject, Size},
 };
 
 #[derive(Debug)]
-pub struct RenderConstrainedBox {
+pub struct RenderView {
     // RenderObject
     pub(crate) size: Size,
 
-    // RenderConstrainedBox
-    pub(crate) additional_constraints: BoxConstraints,
     pub(crate) child: Option<Rc<RefCell<dyn RenderBox>>>,
 }
 
-impl RenderConstrainedBox {
-    pub fn new(constraints: BoxConstraints) -> Self {
-        RenderConstrainedBox {
+impl RenderView {
+    pub fn new() -> Self {
+        RenderView {
             size: Size::zero(),
-            additional_constraints: constraints,
             child: None,
         }
     }
 }
 
-impl HitTestTarget for RenderConstrainedBox {}
+impl HitTestTarget for RenderView {}
 
-impl RenderObject for RenderConstrainedBox {
+impl RenderObject for RenderView {
     fn ty_id(&self) -> TypeId {
         TypeId::of::<Self>()
     }
@@ -41,30 +38,41 @@ impl RenderObject for RenderConstrainedBox {
     }
 
     fn paint(&self, context: &mut PaintContext, offset: Offset) {
-        context.draw_rect(offset, self.size);
+        if let Some(child) = &self.child {
+            child.borrow().paint(context, offset);
+        }
     }
 
-    fn hit_test(&self, position: Offset, result: &mut crate::gestures::HitTestResult) -> bool {
-        self.size().contains(position)
+    fn hit_test(&self, position: Offset, result: &mut HitTestResult) -> bool {
+        if let Some(child) = &self.child {
+            let is_hit = child.borrow().hit_test(position, result);
+            if is_hit {
+                let entry = HitTestEntry::new(child.clone());
+                result.add(entry);
+            }
+            is_hit
+        } else {
+            false
+        }
     }
 }
 
-impl RenderBox for RenderConstrainedBox {
+impl RenderBox for RenderView {
     fn perform_layout(&mut self, constraints: &BoxConstraints) {
         self.size = match &mut self.child {
             Some(child) => {
                 child.borrow_mut().layout(constraints, true);
                 child.borrow().size()
             }
-            None => self
-                .additional_constraints
-                .enforce(constraints)
-                .constrain(Size::zero()),
+            None => constraints.constrain(Size::zero()),
         };
     }
 
     fn perform_resize(&mut self, constraints: &BoxConstraints) {
-        todo!()
+        if let Some(child) = &mut self.child {
+            child.borrow_mut().perform_resize(constraints);
+            self.size = child.borrow().size();
+        }
     }
 
     fn size(&self) -> Size {

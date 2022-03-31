@@ -1,6 +1,9 @@
 mod widget;
 pub use widget::*;
 
+mod view;
+pub use view::*;
+
 mod flex;
 pub use flex::*;
 

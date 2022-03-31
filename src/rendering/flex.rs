@@ -1,9 +1,14 @@
-use std::any::{type_name, TypeId};
+use std::{
+    any::{type_name, TypeId},
+    cell::RefCell,
+    ops::Deref,
+    rc::Rc,
+};
 
 use crate::{
-    gestures::HitTestTarget,
+    gestures::{HitTestEntry, HitTestResult, HitTestTarget},
     rendering::{
-        Axis, BoxConstraints, Clip, Element, Offset, PaintContext, RenderBox, RenderObject, Size,
+        Axis, BoxConstraints, Clip, Offset, PaintContext, RenderBox, RenderObject, Size,
         TextBaseline, TextDirection, VerticalDirection,
     },
 };
@@ -102,16 +107,19 @@ pub struct RenderFlexible {
     pub(crate) offset: Offset,
     pub(crate) flex: usize,
     pub(crate) fit: FlexFit,
-    pub(crate) inner: Element,
+    pub(crate) inner: Rc<RefCell<dyn RenderBox>>,
 }
 
 impl RenderFlexible {
-    pub fn new(child: Element, flex: usize, fit: FlexFit) -> Self {
+    pub fn new<T>(child: T, flex: usize, fit: FlexFit) -> Self
+    where
+        T: 'static + RenderBox,
+    {
         RenderFlexible {
             offset: Offset::zero(),
             flex,
             fit,
-            inner: child,
+            inner: Rc::new(RefCell::new(child)),
         }
     }
 }
@@ -263,6 +271,19 @@ impl RenderObject for RenderFlex {
                 .paint(context, child.offset + offset);
         }
     }
+
+    fn hit_test(&self, position: Offset, result: &mut HitTestResult) -> bool {
+        let mut is_hit = false;
+        for child in &self.children {
+            let transformed = position - child.offset;
+            if child.inner.borrow().hit_test(transformed, result) {
+                is_hit = true;
+                let entry = HitTestEntry::new(child.inner.clone());
+                result.add(entry);
+            }
+        }
+        is_hit
+    }
 }
 
 impl RenderBox for RenderFlex {
@@ -402,29 +423,6 @@ impl RenderBox for RenderFlex {
     }
     fn perform_resize(&mut self, constraints: &BoxConstraints) {
         todo!()
-    }
-
-    // fn hit_test_self(&self, position: Offset) -> bool {
-    //     false
-    // }
-
-    fn hit_test_children(&self, position: Offset) -> bool {
-        let mut is_hit = false;
-        for child in &self.children {
-            let transformed = position - child.offset;
-
-            println!(
-                "{:?}, {:?}, {:?}, {:?}",
-                position,
-                transformed,
-                child.offset,
-                child.inner.borrow().size()
-            );
-            if child.inner.borrow().hit_test(transformed) {
-                is_hit = true;
-            }
-        }
-        is_hit
     }
 }
 

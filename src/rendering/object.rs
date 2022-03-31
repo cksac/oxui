@@ -1,11 +1,12 @@
-use std::any::TypeId;
+use std::{any::TypeId, cell::RefCell, rc::Rc};
 
 use compose_rt::Composer;
+use log::debug;
 
 use crate::{
-    gestures::HitTestTarget,
-    rendering::{BoxConstraints, Element, Offset, Size},
-    widgets::{BuildContext, Widget},
+    gestures::{HitTestResult, HitTestTarget, PointerEvent},
+    rendering::{BoxConstraints, Offset, RenderBox, RenderView, Size},
+    widgets::{BuildContext, View, Widget},
 };
 use std::fmt::Debug;
 
@@ -42,12 +43,16 @@ pub trait RenderObject: Debug + HitTestTarget {
     fn ty_name(&self) -> &'static str;
 
     fn paint(&self, context: &mut PaintContext, offset: Offset);
+
+    fn hit_test(&self, position: Offset, result: &mut HitTestResult) -> bool {
+        false
+    }
 }
 
 pub struct PipelineOwner {
     size: Size,
-    root_fn: Box<dyn Fn(&mut Composer) -> Element>,
-    render_view: Option<Element>,
+    root_fn: Box<dyn Fn(&mut Composer) -> Rc<RefCell<dyn RenderBox>>>,
+    render_view: Option<Rc<RefCell<dyn RenderBox>>>,
 }
 
 impl PipelineOwner {
@@ -55,7 +60,8 @@ impl PipelineOwner {
     where
         T: 'static + Widget,
     {
-        let root_fn = Box::new(move |cx: BuildContext| root.create(cx));
+        let view = View::new(root);
+        let root_fn = Box::new(move |cx: BuildContext| view.create(cx));
         PipelineOwner {
             size,
             root_fn,
@@ -64,8 +70,21 @@ impl PipelineOwner {
     }
 
     pub fn handle_event(&mut self, position: Offset) {
+        println!("handle_event {:?}", position);
+
         if let Some(view) = &mut self.render_view {
-            view.borrow().hit_test(position);
+            let mut result = HitTestResult::new();
+            view.borrow().hit_test(position, &mut result);
+
+            println!("hit result len {:?}", result.path.len());
+
+            for entry in result.path {
+                // TODO: PointerEvent
+                entry
+                    .target
+                    .borrow_mut()
+                    .handle_event(PointerEvent::new(position), entry.clone());
+            }
         }
     }
 
