@@ -44,8 +44,7 @@ impl Widget for Flex {
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
         context.group(
             |_| {
-                let mut flex = RenderFlex::default();
-                flex.direction = self.direction;
+                let flex = RenderFlex::default().with_direction(self.direction);
                 Rc::new(RefCell::new(flex))
             },
             |_| {

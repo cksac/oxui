@@ -1,11 +1,10 @@
 use std::{any::TypeId, cell::RefCell, rc::Rc};
 
 use compose_rt::Composer;
-use log::debug;
 
 use crate::{
     gestures::{HitTestResult, HitTestTarget, PointerEvent},
-    rendering::{BoxConstraints, Offset, RenderBox, RenderView, Size},
+    rendering::{BoxConstraints, Offset, RenderBox, Size},
     widgets::{BuildContext, View, Widget},
 };
 use std::fmt::Debug;
@@ -101,7 +100,7 @@ impl PipelineOwner {
 
     pub fn flush_layout(&mut self) {
         if let Some(view) = &mut self.render_view {
-            let ref constraints = BoxConstraints::tight(self.size);
+            let constraints = &BoxConstraints::tight(self.size);
             view.borrow_mut().layout(constraints, false)
         }
     }

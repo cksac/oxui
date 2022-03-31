@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    rendering::{BoxConstraints, RenderBox, RenderConstrainedBox, RenderView},
+    rendering::{RenderBox, RenderView},
     widgets::{BuildContext, Widget},
 };
 
@@ -25,7 +25,7 @@ impl Widget for View {
     fn create(&self, context: BuildContext) -> Rc<RefCell<dyn RenderBox>> {
         context.group(
             |_| Rc::new(RefCell::new(RenderView::new())),
-            |n| false,
+            |_| false,
             |cx| self.child.create(cx),
             |n, child| {
                 n.borrow_mut().child = Some(child);

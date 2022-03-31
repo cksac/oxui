@@ -116,7 +116,7 @@ impl RenderObject for RenderSliverToBoxAdapter {
 
 impl RenderSliver for RenderSliverToBoxAdapter {
     fn perform_layout(&mut self, constraints: &SliverConstraints) {
-        let ref box_constraints = constraints.into();
+        let box_constraints = &constraints.into();
         self.child.borrow_mut().layout(box_constraints, true);
 
         let child_size = self.child.borrow().size();
